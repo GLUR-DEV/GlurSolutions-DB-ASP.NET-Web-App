@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using GlurSolutions.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,21 +40,36 @@ public static class PublicApi
             .RequireCors(CorsPolicy)
             .RequireRateLimiting(RateLimitPolicy);
 
-        // Cheap check that the API is up and can reach the database (handy for Azure's health probe)
+        // Cheap check that the API is up and can reach the database (handy for Azure's health probe).
+        // It is outside the key check below so Azure can call it without the key.
         api.MapGet("/health", async (AppDbContext db, CancellationToken ct) =>
             await db.Database.CanConnectAsync(ct)
                 ? Results.Ok(new { status = "ok" })
                 : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
 
+        // Everything below needs the shared key (Api:Key) when one is configured. The Cloudflare Worker
+        // sends it in the X-Api-Key header, so only your site can read the content directly.
+        var content = api.MapGroup("").AddEndpointFilter(async (context, next) =>
+        {
+            var expected = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Api:Key"];
+            if (!string.IsNullOrEmpty(expected))
+            {
+                var supplied = context.HttpContext.Request.Headers["X-Api-Key"].ToString();
+                if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(supplied), Encoding.UTF8.GetBytes(expected)))
+                    return Results.Unauthorized();
+            }
+            return await next(context);
+        });
+
         // Landing page: the Skills pills
-        api.MapGet("/technologies", async (AppDbContext db, CancellationToken ct) =>
+        content.MapGet("/technologies", async (AppDbContext db, CancellationToken ct) =>
             await db.Technologies.AsNoTracking()
                 .OrderBy(t => t.SortOrder)
                 .Select(t => new TechnologyDto(t.Key, t.Label))
                 .ToListAsync(ct));
 
         // Landing page: the project cards
-        api.MapGet("/projects", async (AppDbContext db, CancellationToken ct) =>
+        content.MapGet("/projects", async (AppDbContext db, CancellationToken ct) =>
             await db.Projects.AsNoTracking()
                 .Where(p => p.IsPublished)
                 .OrderBy(p => p.SortOrder)
@@ -65,7 +82,7 @@ public static class PublicApi
                 .ToListAsync(ct));
 
         // Project page: everything for one project, by its slug (e.g. /api/projects/project-one)
-        api.MapGet("/projects/{slug}", async (string slug, AppDbContext db, CancellationToken ct) =>
+        content.MapGet("/projects/{slug}", async (string slug, AppDbContext db, CancellationToken ct) =>
         {
             var project = await db.Projects.AsNoTracking()
                 .Where(p => p.IsPublished && p.Slug == slug)

@@ -1,12 +1,20 @@
 # Connecting glursolutions.com (Cloudflare) to your database
 
 ```
-Local admin app ──writes──▶  Azure SQL  ◀──reads──  Hosted API (api.glursolutions.com)  ◀──fetch──  glursolutions.com (Cloudflare)
+Local admin app ──writes──▶  Azure SQL  ◀──reads──  Hosted API (this project)  ◀──server-side──  Cloudflare Worker  ◀──  visitors
+                                                    api.glursolutions.com                        glursolutions.com
 ```
 
-The Cloudflare site is static, so it can't talk to SQL Server itself. It calls a small read-only API,
-and that API reads the same Azure SQL database your local app edits. This repo now contains that API
-(`Api/PublicApi.cs`, wired up in `Program.cs`).
+Your live site is a Cloudflare Worker with static pages. The Worker already answers `/api/*`
+(the contact form), so it also forwards three read-only content requests to the hosted API and caches the answers.
+Visitors only ever talk to glursolutions.com: no CORS, and the API key never reaches a browser.
+
+Two repos are involved:
+
+| Repo | Change |
+|---|---|
+| This one (ASP.NET + EF Core) | Read-only API in `Api/PublicApi.cs`, wired up in `Program.cs` |
+| The website source (Website V1.4.9) | `src/worker.js` proxy, `public/content.js`, small edits to both HTML pages and `wrangler.toml` |
 
 ## 1. Create the Azure SQL database
 
@@ -40,55 +48,50 @@ database (for example `GlurSolutions-Dev`) and use that string locally.
 
 ## 3. Host the API
 
+Make up a long random key first (for example `openssl rand -base64 32`). The API and the Worker must share it.
+
 1. Create an **Azure App Service** (Linux, .NET 10) and deploy this project to it.
 2. App Service → **Environment variables**, add:
    - `ConnectionStrings__DefaultConnection` = the Azure SQL string
+   - `Api__Key` = the random key
    - `ASPNETCORE_ENVIRONMENT` = `Production` (so it does not migrate or seed on start-up)
-3. Check `https://YOURAPP.azurewebsites.net/api/health` returns `{"status":"ok"}`.
-4. Custom domain: in Cloudflare DNS add a `CNAME` for `api` pointing to `YOURAPP.azurewebsites.net` (set to **DNS only** at first)
-   plus the `asuid.api` TXT record Azure asks for. Add `api.glursolutions.com` under App Service → Custom domains and create
-   the free managed certificate. After that you can turn the Cloudflare proxy on with SSL mode **Full (strict)**.
-
-Endpoints (all GET, published projects only):
+3. Check `https://YOURAPP.azurewebsites.net/api/health` returns `{"status":"ok"}`. Content endpoints answer `401` without the key.
+4. Optional custom domain: in Cloudflare DNS add a `CNAME` for `api` pointing to `YOURAPP.azurewebsites.net` (**DNS only** at first)
+   plus the `asuid.api` TXT record Azure asks for, then add `api.glursolutions.com` under App Service → Custom domains and create
+   the free managed certificate. If you skip this, use `https://YOURAPP.azurewebsites.net` as `API_ORIGIN` below.
 
 | Endpoint | Used for |
 |---|---|
 | `/api/technologies` | Skills pills |
 | `/api/projects` | Landing page cards |
 | `/api/projects/{slug}` | A project page, including slideshows and notes |
-| `/api/health` | Uptime check |
+| `/api/health` | Uptime check (no key needed) |
 
-Allowed browser origins are in `appsettings.json` under `Cors:AllowedOrigins`.
+## 4. Deploy the Worker changes
 
-## 4. Call it from the live site
+In the website repo:
 
-```js
-const API = "https://api.glursolutions.com/api";
+1. Edit `API_ORIGIN` in `wrangler.toml` to your API address.
+2. Store the key as a secret: `npx wrangler secret put API_KEY` (paste the same random key).
+3. `npx wrangler deploy`.
 
-async function loadProjects() {
-  const res = await fetch(`${API}/projects`);
-  if (!res.ok) throw new Error(`API returned ${res.status}`);
-  return res.json();   // [{ slug, title, shortDescription, technologies: [{ key, label }], ... }]
-}
-
-async function loadProject(slug) {
-  const res = await fetch(`${API}/projects/${encodeURIComponent(slug)}`);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`API returned ${res.status}`);
-  return res.json();
-}
-```
-
-Render with `textContent` (not `innerHTML`) so database text can't inject markup. The current site links to
-`projects.html?project=one`; with the database it becomes `projects.html?project=project-one` (the slug).
+How it behaves:
+- Answers are cached 60 seconds. If Azure or the database is asleep or down, the last good answer (up to a day old) is served.
+- The pages ship with their current placeholder HTML. If the API can't be reached at all, that HTML is shown instead of a blank page.
+- Cards link to `projects.html?project=<slug>`. Old `?project=one` links still work (they try `project-one`).
 
 ## Things to know
 
 - **Images**: `CoverImagePath` and `ImagePath` are paths inside this app's `wwwroot`. Files uploaded through your local
-  app won't exist on Azure or Cloudflare. Plan to move uploads to Azure Blob Storage or Cloudflare R2 and store full URLs.
+  app won't exist on Azure or Cloudflare. Until you move uploads to Azure Blob Storage or Cloudflare R2 and store full
+  `https://` URLs, pictures show the grey placeholder (a relative path is looked up on glursolutions.com itself).
+- **"Check this project out" button**: the old pages had a per-project external link, but the database has no field for it yet,
+  so the button is not shown for database projects. Adding a `LiveUrl` column (plus a migration) would bring it back.
 - **No writes are exposed**: the public API is read-only. Keep editing in the admin app, and add authentication before
   ever putting write endpoints on the internet.
-- **Cold starts**: the free Azure SQL tier can pause when idle, so the first request after a quiet spell may be slow;
-  the app retries automatically (`EnableRetryOnFailure`).
-- **Testing the site locally**: add `http://localhost:PORT` to `Cors:AllowedOrigins` in `appsettings.Development.json`.
-- This code was written without a .NET SDK available here, so run `dotnet build` once to confirm it compiles.
+- **Cold starts**: the free Azure SQL tier can pause when idle; the first request after a quiet spell may be slow. The app
+  retries automatically, and the Worker cache hides most of it from visitors.
+- **Unpublished projects** never leave the database: only rows with `IsPublished = true` are returned.
+- **Code not compiled here**: the .NET code was written without an SDK available, so run `dotnet build` once. The Worker
+  proxy was tested with mocked requests; the page script (`content.js`) was only syntax-checked, so load the site locally
+  with `npx wrangler dev` and click through the home and project pages before deploying.
