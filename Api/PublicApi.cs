@@ -42,10 +42,30 @@ public static class PublicApi
 
         // Cheap check that the API is up and can reach the database (handy for Azure's health probe).
         // It is outside the key check below so Azure can call it without the key.
-        api.MapGet("/health", async (AppDbContext db, CancellationToken ct) =>
-            await db.Database.CanConnectAsync(ct)
-                ? Results.Ok(new { status = "ok" })
-                : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
+        // On failure it says which kind of problem it is (the error type and, for SQL errors, Microsoft's error
+        // number, e.g. 18456 login failed, 40615 firewall, 4060 database not found, 208 table missing),
+        // but never the message, so no server names, IPs or passwords are exposed.
+        api.MapGet("/health", async (AppDbContext db, ILogger<AppDbContext> logger, CancellationToken ct) =>
+        {
+            try
+            {
+                await db.Projects.AsNoTracking().AnyAsync(ct);   // proves the connection works AND the tables exist
+                return Results.Json(new { status = "ok" });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Health check failed");
+                var root = ex is Microsoft.Data.SqlClient.SqlException ? ex : ex.InnerException ?? ex;
+                return Results.Json(
+                    new
+                    {
+                        status = "error",
+                        type = root.GetType().Name,
+                        sqlError = (root as Microsoft.Data.SqlClient.SqlException)?.Number
+                    },
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+        });
 
         // Everything below needs the shared key (Api:Key) when one is configured. The Cloudflare Worker
         // sends it in the X-Api-Key header, so only your site can read the content directly.
