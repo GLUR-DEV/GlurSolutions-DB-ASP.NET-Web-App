@@ -1,0 +1,43 @@
+@page
+@model IndexModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step 1 check | GLUR Solutions</title>
+  <!-- Proves wwwroot is being served: the page should use the site's dark theme -->
+  <link rel="stylesheet" href="~/indexstyles.css">
+</head>
+<body>
+  <main class="container" style="padding-top:48px;padding-bottom:48px">
+    <h1>Step 1 check</h1>
+    <p>If you can read this on the dark site theme, static files work. The table below comes from SQL Server.</p>
+    <table style="width:100%;border-collapse:collapse;margin-top:24px">
+      <thead>
+        <tr style="text-align:left">
+          <th>#</th><th>Slug</th><th>Title</th><th>Technologies</th><th>Slideshows</th><th>Slides</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+      @foreach (var p in Model.Projects)
+      {
+        <tr style="border-top:1px solid rgba(255,255,255,.12)">
+          <td>@p.SortOrder</td>
+          <td>@p.Slug</td>
+          <td>@p.Title</td>
+          <td>@string.Join(", ", p.ProjectTechnologies.Select(pt => pt.Technology.Label))</td>
+          <td>@p.Slideshows.Count</td>
+          <td>@p.Slideshows.Sum(s => s.Slides.Count)</td>
+          <td>@p.Notes.Count</td>
+        </tr>
+      }
+      </tbody>
+    </table>
+    <p style="margin-top:24px">Expected: 6 projects, each with 2 slideshows, 9 slides and 6 notes.</p>
+  </main>
+</body>
+</html>

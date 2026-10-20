@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- ============================================================
+       Portfolio landing page – HTML
+       Styles and animations are held in indexstyles.css.
+       Animations are handled in indexscript.js.
+       ============================================================ -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLUR Solutions</title>
+  <meta name="description" content="GLUR Solutions: C#, .NET and web development.">
+
+  <!-- Fonts: Bricolage Grotesque (headings/body) and JetBrains Mono (code/labels) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Marks the page as JS-enabled so scroll-reveal styles only apply when indexscript.js can run.
+       Fallback: if indexscript.js hasn't started within 3s (failed load), the class is removed
+       so the cards are never left hidden. indexscript.js adds "js-ready" when it runs. -->
+  <script>
+    document.documentElement.classList.add('js');
+    setTimeout(function () {
+      if (!document.documentElement.classList.contains('js-ready')) {
+        document.documentElement.classList.remove('js');
+      }
+    }, 3000);
+  </script>
+
+  <link rel="stylesheet" href="indexstyles.css">
+</head>
+<body>
+
+  <!-- Animated "lava lamp" background: two canvases, one in each page margin outside the
+       content column. indexscript.js (section 7) draws wax-like blobs that heat, rise, cool,
+       sink, merge and split. At 1440px and narrower (phones, tablets, small laptops) the margins
+       are too small, so the left canvas covers the whole page at low opacity and the right one
+       is hidden. Purely decorative (aria-hidden); sized and faded in indexstyles.css
+       (section 9c and the 1440px block in section 10). -->
+  <div class="lava" aria-hidden="true">
+    <canvas class="lava__canvas lava__canvas--left"></canvas>
+    <canvas class="lava__canvas lava__canvas--right"></canvas>
+  </div>
+
+  <!-- Lets keyboard users jump past the navigation -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ===== HEADER: logo + main navigation ===== -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="logo" href="#top">&lt; GLUR Solutions /&gt;</a>
+      <nav aria-label="Main">
+        <ul class="nav">
+          <li><a href="#work">Work</a></li>
+          <li><a href="#stack">Skills</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ===== HERO: headline, call-to-action buttons, social links and code card ===== -->
+    <section class="hero container" id="top">
+      <div class="hero__text">
+        <p class="hero__tagline">Web Development · C# · .NET</p>
+        <h1>I create digital solutions that drive REAL business results</h1>
+        <p class="hero__summary">I create responsive, user-friendly websites and web applications to solve your business challenges.</p>
+
+        <!-- Primary and secondary calls to action -->
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#work">View my work</a>
+          <a class="btn btn--secondary" href="#contact">Get in touch</a>
+        </div>
+
+        <!-- Social links (off-site links open in a new tab) -->
+        <ul class="social">
+          <li><a href="https://github.com/GLUR-DEV" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/adam-lawrence-a4718b445/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+        </ul>
+      </div>
+
+      <!-- Decorative code window to showcase skills.
+           aria-hidden: the typing effect leaves partial text on screen, and the same skills
+           are listed in the Stack section, so screen readers skip this card. -->
+      <figure class="code-card" aria-hidden="true">
+        <div class="code-card__dots" aria-hidden="true"><span></span><span></span><span></span></div>
+<!-- Full snippet for tablets and desktops -->
+<pre class="code--full"><code><span class="kw">var</span> app = WebApplication.CreateBuilder(args).Build();
+
+app.<span class="fn">MapGet</span>("/skills", () =&gt; <span class="kw">new</span>[] {
+    "C#", "HTML/CSS/JS", "ASP.NET Core", "JavaScript", "SQL",
+    "Python"
+});</code></pre>
+<!-- Shorter 3-line snippet shown instead on mobile (the CSS swaps the two) -->
+<pre class="code--compact"><code><span class="kw">var</span> app = WebApplication.Create();
+app.<span class="fn">MapGet</span>("/skills", () =&gt;
+    "C#, .NET, SQL, JS");</code></pre>
+      </figure>
+    </section>
+
+    <!-- ===== STACK: technology pills (toggle buttons; multiple can be selected) ===== -->
+    <section class="stack container" id="stack" aria-labelledby="stack-title">
+      <h2 class="label" id="stack-title">// Skills (Stack)</h2>
+      <ul class="pills">
+        <li><button type="button" class="pill" aria-pressed="false" data-tech="html-css-js">HTML / CSS / JS</button></li>
+        <li><button type="button" class="pill" aria-pressed="false" data-tech="csharp">C#</button></li>
+        <li><button type="button" class="pill" aria-pressed="false" data-tech="dotnet">.NET</button></li>
+        <li><button type="button" class="pill" aria-pressed="false" data-tech="sql">SQL</button></li>
+      </ul>
+    </section>
+
+    <!-- ===== WORK: project cards =====
+         Each card links to its project page (projects.html?project=...) and lists up to 3 tags. A tag's data-tech must match a stack pill's data-tech
+         (html-css-js, csharp, dotnet, sql). When pills are selected, only cards with at
+         least one matching tag are shown. The tags below are placeholders. -->
+    <section class="work container" id="work" aria-labelledby="work-title">
+      <h2 class="label" id="work-title">// My work</h2>
+
+      <!-- Filter status for screen readers and sighted users; empty (and hidden) when no filter is active -->
+      <p class="work__status" role="status"></p>
+
+      <div class="cards">
+        <article class="card">
+          <div class="card__image" role="img" aria-label="[PROJECT ONE] screenshot"></div>
+          <h3><a class="card__link" href="projects.html?project=one">[PROJECT ONE]</a></h3>
+          <p>[Short description and tech used]</p>
+          <ul class="card__tags" aria-label="Technologies used">
+            <li data-tech="csharp">C#</li>
+            <li data-tech="dotnet">.NET</li>
+            <li data-tech="sql">SQL</li>
+          </ul>
+          <p class="card__cta" aria-hidden="true">View project <span>&rarr;</span></p>
+        </article>
+        <article class="card">
+          <div class="card__image" role="img" aria-label="[PROJECT TWO] screenshot"></div>
+          <h3><a class="card__link" href="projects.html?project=two">[PROJECT TWO]</a></h3>
+          <p>[Short description and tech used]</p>
+          <ul class="card__tags" aria-label="Technologies used">
+            <li data-tech="html-css-js">HTML / CSS / JS</li>
+            <li data-tech="csharp">C#</li>
+          </ul>
+          <p class="card__cta" aria-hidden="true">View project <span>&rarr;</span></p>
+        </article>
+        <article class="card">
+          <div class="card__image" role="img" aria-label="[PROJECT THREE] screenshot"></div>
+          <h3><a class="card__link" href="projects.html?project=three">[PROJECT THREE]</a></h3>
+          <p>[Short description and tech used]</p>
+          <ul class="card__tags" aria-label="Technologies used">
+            <li data-tech="dotnet">.NET</li>
+          </ul>
+          <p class="card__cta" aria-hidden="true">View project <span>&rarr;</span></p>
+        </article>
+        <article class="card">
+          <div class="card__image" role="img" aria-label="[PROJECT FOUR] screenshot"></div>
+          <h3><a class="card__link" href="projects.html?project=four">[PROJECT FOUR]</a></h3>
+          <p>[Short description and tech used]</p>
+          <ul class="card__tags" aria-label="Technologies used">
+            <li data-tech="sql">SQL</li>
+          </ul>
+          <p class="card__cta" aria-hidden="true">View project <span>&rarr;</span></p>
+        </article>
+        <article class="card">
+          <div class="card__image" role="img" aria-label="[PROJECT FIVE] screenshot"></div>
+          <h3><a class="card__link" href="projects.html?project=five">[PROJECT FIVE]</a></h3>
+          <p>[Short description and tech used]</p>
+          <ul class="card__tags" aria-label="Technologies used">
+            <li data-tech="html-css-js">HTML / CSS / JS</li>
+            <li data-tech="csharp">C#</li>
+          </ul>
+          <p class="card__cta" aria-hidden="true">View project <span>&rarr;</span></p>
+        </article>
+        <article class="card">
+          <div class="card__image" role="img" aria-label="[PROJECT SIX] screenshot"></div>
+          <h3><a class="card__link" href="projects.html?project=six">[PROJECT SIX]</a></h3>
+          <p>[Short description and tech used]</p>
+          <ul class="card__tags" aria-label="Technologies used">
+            <li data-tech="dotnet">C#</li>
+          </ul>
+          <p class="card__cta" aria-hidden="true">View project <span>&rarr;</span></p>
+        </article>
+      </div>
+
+    </section>
+
+    <!-- ===== CONTACT: intro, direct links and a message form =====
+         The form builds an email and opens the visitor's email app (see section 6 in indexscript.js).
+         The action attribute is the same idea for visitors with JavaScript off. -->
+    <section class="contact container" id="contact" aria-labelledby="contact-title">
+      <div class="contact__grid">
+
+        <!-- Left: heading, short pitch and direct links (the heading sits here so that, in the
+             two-column layout, it lines up with the top of the form) -->
+        <div class="contact__intro">
+          <h2 class="label" id="contact-title">// Contact</h2>
+          <p class="contact__lead">Have a project in mind, or want to work together? Send me a message.</p>
+          <ul class="social">
+            <li><a href="mailto:glur.studios@gmail.com">glur.studios@gmail.com</a></li>
+            <li><a href="https://github.com/GLUR-DEV" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+            <li><a href="https://www.linkedin.com/in/adam-lawrence-a4718b445/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          </ul>
+        </div>
+
+        <!-- Right: message form -->
+        <form class="contact-form" action="mailto:glur.studios@gmail.com" method="post" enctype="text/plain" data-email="glur.studios@gmail.com">
+          <div class="field">
+            <label for="contact-name">Name</label>
+            <input id="contact-name" name="name" type="text" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="contact-email">Email</label>
+            <input id="contact-email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" name="message" rows="5" required></textarea>
+          </div>
+          <button class="btn btn--primary" type="submit">Send message</button>
+          <!-- Feedback after submitting -->
+          <p class="form__status" role="status"></p>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- ===== ABOUT: short bio ===== -->
+    <section class="about container" id="about" aria-labelledby="about-title">
+      <h2 class="label" id="about-title">// About</h2>
+      <p>I am a passionate web developer with expertise in C#, .NET, and modern web technologies.
+        I enjoy creating efficient, scalable, and user-friendly applications that solve real-world problems for businesses and individuals.
+        I am currently studying Computer Science and Cyber Security at the University of Waikato.</p>
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER: copyright and links ===== -->
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <p>
+        <span class="logo">&lt; GLUR Solutions /&gt;</span>
+        &nbsp;© 2026 · Built with Love by GLUR
+      </p>
+      <ul class="social">
+        <li><a href="https://github.com/GLUR-DEV" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/adam-lawrence-a4718b445/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+        <li><a href="mailto:glur.studios@gmail.com">glur.studios@gmail.com</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Header scroll state, code typing effect, card reveal, active nav link, stack filter, contact form and lava lamp -->
+  <script src="indexscript.js" defer></script>
+
+</body>
+</html>
