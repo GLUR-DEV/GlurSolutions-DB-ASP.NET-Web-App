@@ -2,12 +2,23 @@ using System.Threading.RateLimiting;
 using GlurSolutions.Web;
 using GlurSolutions.Web.Api;
 using GlurSolutions.Web.Data;
+using GlurSolutions.Web.Security;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+
+// dotnet run -- hash-password : prints a password hash for the admin login, then exits (no database needed)
+if (args is ["hash-password"])
+{
+    HashPasswordCommand.Run();
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
+
+// Admin login: cookie sign-in, origin-secret gate and login lockout (see Security/AdminSecurity.cs)
+builder.Services.AddAdminSecurity(builder.Configuration);
 
 // The database. The connection string comes from appsettings.Development.json while developing.
 // In production it must come from an environment variable or secret store, never from a file in git:
@@ -77,19 +88,9 @@ app.UseRouting();
 app.UseCors();
 app.UseRateLimiter();
 
-// The admin pages only exist on your own computer: anywhere else (including the Azure site) /Admin is a 404.
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/Admin")
-        && !AdminAccess.Allowed(context, context.RequestServices.GetRequiredService<IWebHostEnvironment>()))
-    {
-        context.Response.StatusCode = StatusCodes.Status404NotFound;
-        return;
-    }
-    await next();
-});
-
-app.UseAuthorization();
+// /Admin: 404 unless the request came through the Cloudflare Worker (X-Origin-Secret) or, in Development, from this
+// computer; then a login is required. Also adds UseAuthentication and UseAuthorization, so they are not repeated here.
+app.UseAdminSecurity();
 app.MapRazorPages();
 app.MapPublicApi();
 
