@@ -1,0 +1,35 @@
+@page
+@model TechnologiesModel
+@{
+    ViewData["Title"] = "Skills";
+}
+<h1>Skills</h1>
+<p class="hint">These are the filter pills on the home page and the tags on project cards. The <strong>key</strong> is an internal name (lower-case, no spaces); the <strong>label</strong> is what visitors see.</p>
+
+@foreach (var t in Model.Technologies)
+{
+  <form method="post" class="card">
+    <input type="hidden" name="id" value="@t.Id" />
+    <div class="grid">
+      <div><label>Label</label><input type="text" name="label" value="@t.Label" maxlength="60" /></div>
+      <div><label>Key</label><input type="text" name="key" value="@t.Key" maxlength="40" /></div>
+      <div><label>Sort order</label><input type="number" name="sortOrder" value="@t.SortOrder" /></div>
+    </div>
+    <p class="actions" style="margin-bottom:0">
+      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
+      <button type="submit" asp-page-handler="Delete" class="danger"
+              onclick="return confirm('Delete this skill?');">Delete</button>
+      <span class="muted">Used by @t.Uses project(s)</span>
+    </p>
+  </form>
+}
+
+<h2>Add a skill</h2>
+<form method="post" class="card">
+  <div class="grid">
+    <div><label>Label</label><input type="text" name="label" maxlength="60" placeholder="Python" /></div>
+    <div><label>Key</label><input type="text" name="key" maxlength="40" placeholder="python" /></div>
+    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Technologies.Count + 1)" /></div>
+  </div>
+  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add skill</button></p>
+</form>

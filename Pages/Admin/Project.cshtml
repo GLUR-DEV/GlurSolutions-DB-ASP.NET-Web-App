@@ -1,0 +1,112 @@
+@page "{id:int?}"
+@model ProjectModel
+@{
+    ViewData["Title"] = Model.IsNew ? "New project" : "Edit project";
+}
+<p class="crumb"><a asp-page="Index">Projects</a> &rsaquo; @(Model.IsNew ? "New project" : Model.Input.Title)</p>
+<div class="head">
+  <h1>@(Model.IsNew ? "New project" : "Edit project")</h1>
+  @if (!Model.IsNew)
+  {
+    <a class="btn" target="_blank" rel="noopener noreferrer"
+       href="https://glursolutions.com/projects.html?project=@Uri.EscapeDataString(Model.Input.Slug)">View on live site</a>
+  }
+</div>
+
+<form method="post">
+  <div asp-validation-summary="All"></div>
+
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label asp-for="Input.Title">Title</label>
+        <input asp-for="Input.Title" type="text" maxlength="120" />
+        <span asp-validation-for="Input.Title"></span>
+      </div>
+      <div>
+        <label asp-for="Input.Slug">Slug (part of the page address)</label>
+        <input asp-for="Input.Slug" type="text" maxlength="80" />
+        <span asp-validation-for="Input.Slug"></span>
+        <div class="muted">Page address: projects.html?project=<em>slug</em>. Changing it breaks old links to this project.</div>
+      </div>
+    </div>
+
+    <label asp-for="Input.ShortDescription">Short description (the text on the card)</label>
+    <input asp-for="Input.ShortDescription" type="text" maxlength="300" />
+    <span asp-validation-for="Input.ShortDescription"></span>
+
+    <label asp-for="Input.Summary">Summary (longer intro at the top of the project page; falls back to the short description)</label>
+    <textarea asp-for="Input.Summary" rows="4" maxlength="1000"></textarea>
+    <span asp-validation-for="Input.Summary"></span>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Card picture</h2>
+    <label asp-for="Input.CoverImagePath">Picture address</label>
+    <input asp-for="Input.CoverImagePath" type="text" maxlength="260" placeholder="https://..." />
+    <span asp-validation-for="Input.CoverImagePath"></span>
+    <div class="muted">Pictures must be hosted online (a full https:// address). Files on your computer will not show on the website.</div>
+    <label asp-for="Input.CoverAlt">Picture description (for screen readers)</label>
+    <input asp-for="Input.CoverAlt" type="text" maxlength="200" />
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Details panel</h2>
+    <div class="grid">
+      <div><label asp-for="Input.Role">Role</label><input asp-for="Input.Role" type="text" maxlength="120" /></div>
+      <div><label asp-for="Input.Tools">Tools</label><input asp-for="Input.Tools" type="text" maxlength="200" /></div>
+      <div><label asp-for="Input.Timeframe">Timeframe</label><input asp-for="Input.Timeframe" type="text" maxlength="80" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Skills used</h2>
+    @if (Model.AllTechnologies.Count == 0)
+    {
+      <p class="muted">No skills yet. Add some on the <a asp-page="Technologies">Skills</a> page. Cards show the first three.</p>
+    }
+    else
+    {
+      @foreach (var t in Model.AllTechnologies)
+      {
+        <label class="check">
+          <input type="checkbox" name="SelectedTechnologyIds" value="@t.Id" @(Model.SelectedTechnologyIds.Contains(t.Id) ? "checked" : "") />
+          @t.Label
+        </label>
+      }
+      <div class="muted">Cards show the first three, in the order set on the Skills page.</div>
+    }
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label asp-for="Input.SortOrder">Sort order (lowest first)</label>
+        <input asp-for="Input.SortOrder" type="number" />
+      </div>
+      <div>
+        <label class="check" style="margin-top:36px">
+          <input asp-for="Input.IsPublished" type="checkbox" /> Published (visible on glursolutions.com)
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="primary btn">@(Model.IsNew ? "Create project" : "Save changes")</button>
+  <a class="btn" asp-page="Index">Cancel</a>
+</form>
+
+@if (!Model.IsNew)
+{
+  <h2>Slideshows, slides and notes</h2>
+  <div class="card">
+    <p>
+      <a class="btn" asp-page="Slideshows" asp-route-projectId="@Model.ProjectId">Slideshows and slides</a>
+      <span class="muted">&nbsp;@Model.SlideshowCount slideshow(s), @Model.SlideCount slide(s)</span>
+    </p>
+    <p>
+      <a class="btn" asp-page="Notes" asp-route-projectId="@Model.ProjectId">Side-panel notes</a>
+      <span class="muted">&nbsp;@Model.NoteCount note(s): "Feedback" and "What improved"</span>
+    </p>
+  </div>
+}

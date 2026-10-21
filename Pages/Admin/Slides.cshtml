@@ -1,0 +1,54 @@
+@page "{slideshowId:int}"
+@model SlidesModel
+@{
+    ViewData["Title"] = "Slides";
+}
+<p class="crumb">
+  <a asp-page="Index">Projects</a> &rsaquo;
+  <a asp-page="Project" asp-route-id="@Model.ProjectId">@Model.ProjectTitle</a> &rsaquo;
+  <a asp-page="Slideshows" asp-route-projectId="@Model.ProjectId">Slideshows</a> &rsaquo;
+  @Model.SlideshowHeading
+</p>
+<h1>@Model.SlideshowHeading</h1>
+<p class="hint">Slides play in sort order. The <strong>stage label</strong> is the text on the button under the picture. The picture must be hosted online (a full https:// address); leave it empty to show a grey placeholder.</p>
+
+@foreach (var s in Model.Slides)
+{
+  <form method="post" class="card">
+    <input type="hidden" name="id" value="@s.Id" />
+    <div class="grid">
+      <div><label>Stage label (button)</label><input type="text" name="stageLabel" value="@s.StageLabel" maxlength="60" /></div>
+      <div><label>Title</label><input type="text" name="title" value="@s.Title" maxlength="120" /></div>
+      <div><label>Sort order</label><input type="number" name="sortOrder" value="@s.SortOrder" /></div>
+    </div>
+    <label>Caption</label>
+    <textarea name="caption" rows="2" maxlength="600">@s.Caption</textarea>
+    <div class="grid">
+      <div><label>Picture address</label><input type="text" name="imagePath" value="@s.ImagePath" maxlength="260" placeholder="https://..." /></div>
+      <div><label>Picture description (for screen readers)</label><input type="text" name="imageAlt" value="@s.ImageAlt" maxlength="200" /></div>
+    </div>
+    <p class="actions" style="margin-bottom:0">
+      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
+      <button type="submit" asp-page-handler="Delete" class="danger"
+              onclick="return confirm('Delete this slide?');">Delete</button>
+    </p>
+  </form>
+}
+
+<h2>Add a slide</h2>
+<form method="post" class="card">
+  <div class="grid">
+    <div><label>Stage label (button)</label><input type="text" name="stageLabel" maxlength="60" placeholder="Wireframe" /></div>
+    <div><label>Title</label><input type="text" name="title" maxlength="120" /></div>
+    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Slides.Count + 1)" /></div>
+  </div>
+  <label>Caption</label>
+  <textarea name="caption" rows="2" maxlength="600"></textarea>
+  <div class="grid">
+    <div><label>Picture address</label><input type="text" name="imagePath" maxlength="260" placeholder="https://..." /></div>
+    <div><label>Picture description (for screen readers)</label><input type="text" name="imageAlt" maxlength="200" /></div>
+  </div>
+  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add slide</button></p>
+</form>
+
+<p><a class="btn" asp-page="Slideshows" asp-route-projectId="@Model.ProjectId">Back to slideshows</a></p>

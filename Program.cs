@@ -50,14 +50,19 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// While developing, create/update the database and fill it with the placeholder projects on start-up.
+// While developing, create/update the database on start-up.
 // In production run migrations deliberately (dotnet ef database update) instead of on start-up.
+// The six placeholder projects are only added when Seed:Enabled is true (off by default). The database now holds
+// your real content, and without this switch deleting every project in the admin would bring the placeholders back.
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(db);
+    if (builder.Configuration.GetValue<bool>("Seed:Enabled"))
+    {
+        await DbSeeder.SeedAsync(db);
+    }
 }
 else
 {
@@ -70,6 +75,19 @@ app.UseStaticFiles();      // serves everything in wwwroot (your CSS and JS)
 app.UseRouting();
 app.UseCors();
 app.UseRateLimiter();
+
+// The admin pages only exist on your own computer: anywhere else (including the Azure site) /Admin is a 404.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/Admin")
+        && !AdminAccess.Allowed(context, context.RequestServices.GetRequiredService<IWebHostEnvironment>()))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+    await next();
+});
+
 app.UseAuthorization();
 app.MapRazorPages();
 app.MapPublicApi();

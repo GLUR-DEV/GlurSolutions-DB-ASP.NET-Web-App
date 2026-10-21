@@ -1,0 +1,52 @@
+@page "{projectId:int}"
+@model SlideshowsModel
+@{
+    ViewData["Title"] = "Slideshows";
+}
+<p class="crumb"><a asp-page="Index">Projects</a> &rsaquo; <a asp-page="Project" asp-route-id="@Model.ProjectId">@Model.ProjectTitle</a> &rsaquo; Slideshows</p>
+<h1>Slideshows</h1>
+<p class="hint">A project page shows one <strong>Process</strong> slideshow (wireframe to final product) and one <strong>Improvement</strong> slideshow (changes over time). If a project has several of the same kind, the website shows the first one with slides.</p>
+
+@foreach (var s in Model.Slideshows)
+{
+  <form method="post" class="card">
+    <input type="hidden" name="id" value="@s.Id" />
+    <div class="grid">
+      <div>
+        <label>Kind</label>
+        <select name="kind">
+          @foreach (var k in Enum.GetValues<SlideshowKind>())
+          {
+            <option value="@k" selected="@(s.Kind == k)">@k</option>
+          }
+        </select>
+      </div>
+      <div><label>Heading</label><input type="text" name="heading" value="@s.Heading" maxlength="120" /></div>
+      <div><label>Sort order</label><input type="number" name="sortOrder" value="@s.SortOrder" /></div>
+    </div>
+    <p class="actions" style="margin-bottom:0">
+      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
+      <a class="btn" asp-page="Slides" asp-route-slideshowId="@s.Id">Edit slides (@s.Slides)</a>
+      <button type="submit" asp-page-handler="Delete" class="danger"
+              onclick="return confirm('Delete this slideshow and all its slides? This cannot be undone.');">Delete</button>
+    </p>
+  </form>
+}
+
+<h2>Add a slideshow</h2>
+<form method="post" class="card">
+  <div class="grid">
+    <div>
+      <label>Kind</label>
+      <select name="kind">
+        @foreach (var k in Enum.GetValues<SlideshowKind>())
+        {
+          <option value="@k">@k</option>
+        }
+      </select>
+    </div>
+    <div><label>Heading</label><input type="text" name="heading" maxlength="120" placeholder="Wireframe to final product" /></div>
+    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Slideshows.Count + 1)" /></div>
+  </div>
+  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add slideshow</button></p>
+</form>

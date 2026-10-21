@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>@ViewData["Title"] | GLUR Admin</title>
+  <style>
+    :root { --bg:#161a18; --panel:#1f2522; --line:#34403a; --text:#e8efe9; --muted:#9aa8a0; --accent:#7fb896; --danger:#e8806c; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, "Segoe UI", sans-serif; }
+    a { color:var(--accent); }
+    header.bar { display:flex; flex-wrap:wrap; gap:16px; align-items:center; padding:12px 24px; background:var(--panel); border-bottom:1px solid var(--line); }
+    header.bar nav { display:flex; gap:16px; }
+    header.bar .env { margin-left:auto; color:var(--muted); font-size:13px; }
+    main { max-width:1000px; margin:0 auto; padding:24px; }
+    h1 { font-size:26px; margin:0 0 8px; } h2 { font-size:18px; margin:28px 0 8px; }
+    .head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .crumb { color:var(--muted); font-size:14px; margin-bottom:12px; }
+    .hint, .muted { color:var(--muted); font-size:13px; }
+    .flash { padding:10px 14px; border-radius:8px; margin:0 0 16px; border:1px solid; }
+    .flash.ok { background:#1d2f25; border-color:#2f5a42; } .flash.err { background:#34211d; border-color:#7a3b2f; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; font-size:13px; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .actions form { margin:0; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin:12px 0; }
+    label { display:block; font-weight:600; margin:12px 0 4px; }
+    label.check { display:inline-flex; align-items:center; gap:6px; font-weight:400; margin:4px 16px 4px 0; }
+    input[type=text], input[type=number], select, textarea { width:100%; padding:8px 10px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:6px; font:inherit; }
+    textarea { resize:vertical; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0 16px; }
+    .btn, button { display:inline-block; padding:7px 14px; border-radius:6px; border:1px solid var(--line); background:var(--panel); color:var(--text); font:inherit; cursor:pointer; text-decoration:none; }
+    .btn:hover, button:hover { border-color:var(--accent); }
+    .primary { background:var(--accent); border-color:var(--accent); color:#10221a; font-weight:600; }
+    .danger { color:var(--danger); border-color:#5a2f27; }
+    .field-validation-error, .validation-summary-errors { color:var(--danger); font-size:13px; }
+    .validation-summary-errors ul { margin:0 0 12px; padding-left:18px; }
+    .pill { display:inline-block; padding:1px 9px; border-radius:999px; font-size:12px; border:1px solid var(--line); }
+    .pill.on { background:#1d2f25; border-color:#2f5a42; color:var(--accent); }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <strong>GLUR Admin</strong>
+    <nav>
+      <a asp-page="/Admin/Index">Projects</a>
+      <a asp-page="/Admin/Technologies">Skills</a>
+      <a href="https://glursolutions.com" target="_blank" rel="noopener noreferrer">View live site</a>
+    </nav>
+    <span class="env">Local only &middot; edits the live database &middot; the website updates within about 2 minutes</span>
+  </header>
+  <main>
+    @if (TempData["Message"] is string flashMessage)
+    {
+      <div class="flash ok" role="status">@flashMessage</div>
+    }
+    @if (TempData["Error"] is string flashError)
+    {
+      <div class="flash err" role="alert">@flashError</div>
+    }
+    @RenderBody()
+  </main>
+</body>
+</html>

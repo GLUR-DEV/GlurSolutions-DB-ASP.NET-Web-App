@@ -1,0 +1,55 @@
+@page "{projectId:int}"
+@model NotesModel
+@{
+    ViewData["Title"] = "Notes";
+}
+<p class="crumb"><a asp-page="Index">Projects</a> &rsaquo; <a asp-page="Project" asp-route-id="@Model.ProjectId">@Model.ProjectTitle</a> &rsaquo; Notes</p>
+<h1>Side-panel notes</h1>
+<p class="hint">Each note is a bold heading plus one sentence. <strong>Feedback</strong> notes appear beside the first slideshow, <strong>Improved</strong> notes ("What improved") beside the second.</p>
+
+@foreach (var n in Model.Notes)
+{
+  <form method="post" class="card">
+    <input type="hidden" name="id" value="@n.Id" />
+    <div class="grid">
+      <div>
+        <label>Panel</label>
+        <select name="kind">
+          @foreach (var k in Enum.GetValues<NoteKind>())
+          {
+            <option value="@k" selected="@(n.Kind == k)">@k</option>
+          }
+        </select>
+      </div>
+      <div><label>Heading</label><input type="text" name="heading" value="@n.Heading" maxlength="80" /></div>
+      <div><label>Sort order</label><input type="number" name="sortOrder" value="@n.SortOrder" /></div>
+    </div>
+    <label>Text</label>
+    <textarea name="body" rows="2" maxlength="400">@n.Body</textarea>
+    <p class="actions" style="margin-bottom:0">
+      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
+      <button type="submit" asp-page-handler="Delete" class="danger"
+              onclick="return confirm('Delete this note?');">Delete</button>
+    </p>
+  </form>
+}
+
+<h2>Add a note</h2>
+<form method="post" class="card">
+  <div class="grid">
+    <div>
+      <label>Panel</label>
+      <select name="kind">
+        @foreach (var k in Enum.GetValues<NoteKind>())
+        {
+          <option value="@k">@k</option>
+        }
+      </select>
+    </div>
+    <div><label>Heading</label><input type="text" name="heading" maxlength="80" placeholder="Navigation" /></div>
+    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Notes.Count + 1)" /></div>
+  </div>
+  <label>Text</label>
+  <textarea name="body" rows="2" maxlength="400"></textarea>
+  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add note</button></p>
+</form>
