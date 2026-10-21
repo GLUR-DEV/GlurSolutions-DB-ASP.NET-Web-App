@@ -45,6 +45,16 @@ public static class AdminSecurity
                 options.Events.OnValidatePrincipal = ValidateSessionAsync;
             });
 
+        // The antiforgery cookie defaults to SameSite=Strict, which browsers refuse to store when the page was reached
+        // from another site (here: the Cloudflare Access sign-in). The form then has no matching cookie and the POST
+        // fails with a blank HTTP 400. Lax is enough: the form token itself still blocks cross-site forgery.
+        services.AddAntiforgery(o =>
+        {
+            o.Cookie.SameSite = SameSiteMode.Lax;
+            o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            o.Cookie.HttpOnly = true;
+        });
+
         services.AddAuthorization();
         services.Configure<RazorPagesOptions>(o =>
         {
