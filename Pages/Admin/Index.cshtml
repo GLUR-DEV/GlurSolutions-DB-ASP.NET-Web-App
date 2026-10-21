@@ -1,0 +1,50 @@
+@page
+@model AdminIndexModel
+@{
+    ViewData["Title"] = "Projects";
+}
+<div class="head">
+  <h1>Projects</h1>
+  <a class="btn primary" asp-page="Project">New project</a>
+</div>
+<p class="hint">Only <strong>published</strong> projects appear on glursolutions.com, in order of the sort number (lowest first). New projects start as drafts.</p>
+
+@if (Model.Projects.Count == 0)
+{
+  <p>No projects yet. Click <strong>New project</strong> to add one.</p>
+}
+else
+{
+  <table>
+    <thead>
+      <tr><th>Order</th><th>Project</th><th>Status</th><th>Slideshows / slides / notes</th><th>Updated (UTC)</th><th></th></tr>
+    </thead>
+    <tbody>
+    @foreach (var p in Model.Projects)
+    {
+      <tr>
+        <td>@p.SortOrder</td>
+        <td>
+          <a asp-page="Project" asp-route-id="@p.Id">@p.Title</a>
+          <div class="muted">@p.Slug</div>
+        </td>
+        <td><span class="pill @(p.IsPublished ? "on" : "")">@(p.IsPublished ? "Published" : "Draft")</span></td>
+        <td>@p.Slideshows / @p.Slides / @p.Notes</td>
+        <td class="muted">@p.UpdatedUtc.ToString("yyyy-MM-dd HH:mm")</td>
+        <td>
+          <div class="actions">
+            <a class="btn" asp-page="Project" asp-route-id="@p.Id">Edit</a>
+            <form method="post" asp-page-handler="TogglePublish" asp-route-id="@p.Id">
+              <button type="submit">@(p.IsPublished ? "Unpublish" : "Publish")</button>
+            </form>
+            <form method="post" asp-page-handler="Delete" asp-route-id="@p.Id"
+                  onsubmit="return confirm('Delete this project with all its slides and notes? This cannot be undone.');">
+              <button type="submit" class="danger">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+}
