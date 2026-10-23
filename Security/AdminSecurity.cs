@@ -50,6 +50,7 @@ public static class AdminSecurity
         // fails with a blank HTTP 400. Lax is enough: the form token itself still blocks cross-site forgery.
         services.AddAntiforgery(o =>
         {
+            o.Cookie.Name = "glur.af";
             o.Cookie.SameSite = SameSiteMode.Lax;
             o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             o.Cookie.HttpOnly = true;
