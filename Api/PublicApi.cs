@@ -1,7 +1,8 @@
+using GlurSolutions.Web.Data;
+using GlurSolutions.Web.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
-using GlurSolutions.Web.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace GlurSolutions.Web.Api;
 
@@ -81,54 +82,15 @@ public static class PublicApi
             return await next(context);
         });
 
-        // Landing page: the Skills pills
-        content.MapGet("/technologies", async (AppDbContext db, CancellationToken ct) =>
-            await db.Technologies.AsNoTracking()
-                .OrderBy(t => t.SortOrder)
-                .Select(t => new TechnologyDto(t.Key, t.Label))
-                .ToListAsync(ct));
+        content.MapGet("/technologies", (SiteDataBuilder b, CancellationToken ct) =>
+            b.GetTechnologiesAsync(ct));
 
-        // Landing page: the project cards
-        content.MapGet("/projects", async (AppDbContext db, CancellationToken ct) =>
-            await db.Projects.AsNoTracking()
-                .Where(p => p.IsPublished)
-                .OrderBy(p => p.SortOrder)
-                .Select(p => new ProjectCardDto(
-                    p.Slug, p.Title, p.ShortDescription, p.CoverImagePath, p.CoverAlt,
-                    p.ProjectTechnologies
-                        .OrderBy(pt => pt.Technology.SortOrder)
-                        .Select(pt => new TechnologyDto(pt.Technology.Key, pt.Technology.Label))
-                        .ToList()))
-                .ToListAsync(ct));
+        content.MapGet("/projects", (SiteDataBuilder b, CancellationToken ct) =>
+            b.GetProjectsAsync(ct));
 
-        // Project page: everything for one project, by its slug (e.g. /api/projects/project-one)
-        content.MapGet("/projects/{slug}", async (string slug, AppDbContext db, CancellationToken ct) =>
+        content.MapGet("/projects/{slug}", async (string slug, SiteDataBuilder b, CancellationToken ct) =>
         {
-            var project = await db.Projects.AsNoTracking()
-                .Where(p => p.IsPublished && p.Slug == slug)
-                .Select(p => new ProjectDetailDto(
-                    p.Slug, p.Title, p.ShortDescription, p.Summary,
-                    p.CoverImagePath, p.CoverAlt,
-                    p.Role, p.Tools, p.Timeframe, p.UpdatedUtc,
-                    p.ProjectTechnologies
-                        .OrderBy(pt => pt.Technology.SortOrder)
-                        .Select(pt => new TechnologyDto(pt.Technology.Key, pt.Technology.Label))
-                        .ToList(),
-                    p.Slideshows
-                        .OrderBy(s => s.SortOrder)
-                        .Select(s => new SlideshowDto(
-                            s.Kind.ToString(), s.Heading,
-                            s.Slides.OrderBy(sl => sl.SortOrder)
-                                .Select(sl => new SlideDto(sl.StageLabel, sl.Title, sl.Caption, sl.ImagePath, sl.ImageAlt))
-                                .ToList()))
-                        .ToList(),
-                    p.Notes
-                        .OrderBy(n => n.SortOrder)
-                        .Select(n => new NoteDto(n.Kind.ToString(), n.Heading, n.Body))
-                        .ToList()))
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(ct);
-
+            var project = await b.GetProjectAsync(slug, ct);
             return project is null ? Results.NotFound() : Results.Ok(project);
         });
     }

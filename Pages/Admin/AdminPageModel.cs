@@ -1,5 +1,6 @@
-using System.Text.RegularExpressions;
+using GlurSolutions.Web.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.RegularExpressions;
 
 namespace GlurSolutions.Web.Pages.Admin;
 
@@ -11,6 +12,15 @@ public abstract class AdminPageModel : PageModel
 
     /// <summary>A red error message, shown once after a redirect.</summary>
     protected void Fail(string message) => TempData["Error"] = message;
+
+    /// <summary>Rewrites the saved copy of the public site (Azure Storage) so it matches the database.
+    /// Call right after SaveChangesAsync. A failure never loses the edit; it just shows a warning.</summary>
+    protected async Task RefreshSnapshotAsync()
+    {
+        var ok = await HttpContext.RequestServices.GetRequiredService<SnapshotService>().TryRefreshAsync();
+        if (!ok)
+            Fail("Saved, but the cached copy of the site could not be updated. It will catch up on the next save.");
+    }
 }
 
 /// <summary>Checks shared by several admin pages.</summary>
