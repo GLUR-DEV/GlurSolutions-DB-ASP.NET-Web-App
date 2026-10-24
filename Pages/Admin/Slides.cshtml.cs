@@ -45,6 +45,7 @@ public class SlidesModel(AppDbContext db) : AdminPageModel
             ImagePath = AdminValidation.Clean(imagePath), ImageAlt = AdminValidation.Clean(imageAlt), SortOrder = sortOrder
         });
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Slide added.");
         return RedirectToPage(new { slideshowId });
     }
@@ -64,6 +65,7 @@ public class SlidesModel(AppDbContext db) : AdminPageModel
         slide.ImageAlt = AdminValidation.Clean(imageAlt);
         slide.SortOrder = sortOrder;
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash($"Saved slide \"{slide.StageLabel}\".");
         return RedirectToPage(new { slideshowId });
     }
@@ -75,6 +77,7 @@ public class SlidesModel(AppDbContext db) : AdminPageModel
 
         db.Slides.Remove(slide);
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Slide deleted.");
         return RedirectToPage(new { slideshowId });
     }

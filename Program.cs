@@ -5,6 +5,9 @@ using GlurSolutions.Web.Data;
 using GlurSolutions.Web.Security;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
+using GlurSolutions.Web.Services;
 
 // dotnet run -- hash-password : prints a password hash for the admin login, then exits (no database needed)
 if (args is ["hash-password"])
@@ -16,6 +19,8 @@ if (args is ["hash-password"])
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<SiteDataBuilder>();
+builder.Services.AddScoped<SnapshotService>();
 
 // Admin login: cookie sign-in, origin-secret gate and login lockout (see Security/AdminSecurity.cs)
 builder.Services.AddAdminSecurity(builder.Configuration);
@@ -93,5 +98,17 @@ app.UseRateLimiter();
 app.UseAdminSecurity();
 app.MapRazorPages();
 app.MapPublicApi();
+
+app.MapPost("/internal/snapshot", async (HttpRequest req, SnapshotService svc, IConfiguration cfg) =>
+{
+    var expected = cfg["Snapshot:Key"] ?? "";
+    var supplied = req.Headers["X-Snapshot-Key"].ToString();
+    if (expected.Length == 0 ||
+        !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(supplied), Encoding.UTF8.GetBytes(expected)))
+        return Results.Unauthorized();
+
+    await svc.RefreshAsync();
+    return Results.Ok(new { refreshed = DateTimeOffset.UtcNow });
+}).AllowAnonymous();
 
 app.Run();

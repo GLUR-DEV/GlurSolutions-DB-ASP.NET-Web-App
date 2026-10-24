@@ -41,6 +41,7 @@ public class SlideshowsModel(AppDbContext db) : AdminPageModel
         var slideshow = new Slideshow { ProjectId = projectId, Kind = kind, Heading = heading.Trim(), SortOrder = sortOrder };
         db.Slideshows.Add(slideshow);
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Slideshow added. Now add its slides.");
         return RedirectToPage("Slides", new { slideshowId = slideshow.Id });
     }
@@ -59,6 +60,7 @@ public class SlideshowsModel(AppDbContext db) : AdminPageModel
         slideshow.Heading = heading.Trim();
         slideshow.SortOrder = sortOrder;
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Slideshow saved.");
         return RedirectToPage(new { projectId });
     }
@@ -71,6 +73,7 @@ public class SlideshowsModel(AppDbContext db) : AdminPageModel
 
         db.Slideshows.Remove(slideshow);
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Slideshow deleted.");
         return RedirectToPage(new { projectId });
     }

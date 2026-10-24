@@ -28,6 +28,7 @@ public class TechnologiesModel(AppDbContext db) : AdminPageModel
 
         db.Technologies.Add(new Technology { Key = key!.Trim().ToLowerInvariant(), Label = label!.Trim(), SortOrder = sortOrder });
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash($"Added \"{label!.Trim()}\".");
         return RedirectToPage();
     }
@@ -44,6 +45,7 @@ public class TechnologiesModel(AppDbContext db) : AdminPageModel
         technology.Label = label!.Trim();
         technology.SortOrder = sortOrder;
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash($"Saved \"{technology.Label}\".");
         return RedirectToPage();
     }
@@ -62,6 +64,7 @@ public class TechnologiesModel(AppDbContext db) : AdminPageModel
 
         db.Technologies.Remove(technology);
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash($"Deleted \"{technology.Label}\".");
         return RedirectToPage();
     }

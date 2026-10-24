@@ -37,6 +37,7 @@ public class NotesModel(AppDbContext db) : AdminPageModel
             ProjectId = projectId, Kind = kind, Heading = heading!.Trim(), Body = body!.Trim(), SortOrder = sortOrder
         });
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Note added.");
         return RedirectToPage(new { projectId });
     }
@@ -53,6 +54,7 @@ public class NotesModel(AppDbContext db) : AdminPageModel
         note.Body = body!.Trim();
         note.SortOrder = sortOrder;
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Note saved.");
         return RedirectToPage(new { projectId });
     }
@@ -64,6 +66,7 @@ public class NotesModel(AppDbContext db) : AdminPageModel
 
         db.ProjectNotes.Remove(note);
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash("Note deleted.");
         return RedirectToPage(new { projectId });
     }

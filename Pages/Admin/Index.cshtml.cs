@@ -33,6 +33,7 @@ public class AdminIndexModel(AppDbContext db) : AdminPageModel
 
         project.IsPublished = !project.IsPublished;
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash($"\"{project.Title}\" is now {(project.IsPublished ? "published" : "a draft (hidden from the website)")}.");
         return RedirectToPage();
     }
@@ -45,6 +46,7 @@ public class AdminIndexModel(AppDbContext db) : AdminPageModel
 
         db.Projects.Remove(project);
         await db.SaveChangesAsync();
+        await RefreshSnapshotAsync();
         Flash($"Deleted \"{project.Title}\".");
         return RedirectToPage();
     }

@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <!-- For best security practices -->
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.30.1" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <!-- SQL Server driver for Entity Framework Core -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.*" />
