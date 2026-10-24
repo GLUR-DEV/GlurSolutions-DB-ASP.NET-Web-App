@@ -27,10 +27,10 @@
       <div><label>Picture address</label><input type="text" name="imagePath" value="@s.ImagePath" maxlength="260" placeholder="https://..." /></div>
       <div><label>Picture description (for screen readers)</label><input type="text" name="imageAlt" value="@s.ImageAlt" maxlength="200" /></div>
     </div>
-    <p class="actions" style="margin-bottom:0">
+    <p class="actions tight">
       <button type="submit" asp-page-handler="Save" class="primary">Save</button>
       <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this slide?');">Delete</button>
+              data-confirm="Delete this slide?">Delete</button>
     </p>
   </form>
 }
@@ -48,7 +48,7 @@
     <div><label>Picture address</label><input type="text" name="imagePath" maxlength="260" placeholder="https://..." /></div>
     <div><label>Picture description (for screen readers)</label><input type="text" name="imageAlt" maxlength="200" /></div>
   </div>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add slide</button></p>
+  <p class="tight"><button type="submit" asp-page-handler="Add" class="primary">Add slide</button></p>
 </form>
 
 <p><a class="btn" asp-page="Slideshows" asp-route-projectId="@Model.ProjectId">Back to slideshows</a></p>

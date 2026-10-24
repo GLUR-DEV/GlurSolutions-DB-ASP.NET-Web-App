@@ -26,10 +26,10 @@
     </div>
     <label>Text</label>
     <textarea name="body" rows="2" maxlength="400">@n.Body</textarea>
-    <p class="actions" style="margin-bottom:0">
+    <p class="actions tight">
       <button type="submit" asp-page-handler="Save" class="primary">Save</button>
       <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this note?');">Delete</button>
+              data-confirm="Delete this note?">Delete</button>
     </p>
   </form>
 }
@@ -51,5 +51,5 @@
   </div>
   <label>Text</label>
   <textarea name="body" rows="2" maxlength="400"></textarea>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add note</button></p>
+  <p class="tight"><button type="submit" asp-page-handler="Add" class="primary">Add note</button></p>
 </form>

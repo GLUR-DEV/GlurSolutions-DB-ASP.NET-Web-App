@@ -41,7 +41,7 @@
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">Card picture</h2>
+    <h2 class="flush">Card picture</h2>
     <label asp-for="Input.CoverImagePath">Picture address</label>
     <input asp-for="Input.CoverImagePath" type="text" maxlength="260" placeholder="https://..." />
     <span asp-validation-for="Input.CoverImagePath"></span>
@@ -51,7 +51,7 @@
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">Details panel</h2>
+    <h2 class="flush">Details panel</h2>
     <div class="grid">
       <div><label asp-for="Input.Role">Role</label><input asp-for="Input.Role" type="text" maxlength="120" /></div>
       <div><label asp-for="Input.Tools">Tools</label><input asp-for="Input.Tools" type="text" maxlength="200" /></div>
@@ -60,7 +60,7 @@
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">Skills used</h2>
+    <h2 class="flush">Skills used</h2>
     @if (Model.AllTechnologies.Count == 0)
     {
       <p class="muted">No skills yet. Add some on the <a asp-page="Technologies">Skills</a> page. Cards show the first three.</p>
@@ -85,7 +85,7 @@
         <input asp-for="Input.SortOrder" type="number" />
       </div>
       <div>
-        <label class="check" style="margin-top:36px">
+        <label class="check push">
           <input asp-for="Input.IsPublished" type="checkbox" /> Published (visible on glursolutions.com)
         </label>
       </div>

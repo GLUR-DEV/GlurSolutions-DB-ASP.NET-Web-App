@@ -38,7 +38,7 @@ else
               <button type="submit">@(p.IsPublished ? "Unpublish" : "Publish")</button>
             </form>
             <form method="post" asp-page-handler="Delete" asp-route-id="@p.Id"
-                  onsubmit="return confirm('Delete this project with all its slides and notes? This cannot be undone.');">
+                  data-confirm="Delete this project with all its slides and notes? This cannot be undone.">
               <button type="submit" class="danger">Delete</button>
             </form>
           </div>

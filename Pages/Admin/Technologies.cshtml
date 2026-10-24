@@ -15,10 +15,10 @@
       <div><label>Key</label><input type="text" name="key" value="@t.Key" maxlength="40" /></div>
       <div><label>Sort order</label><input type="number" name="sortOrder" value="@t.SortOrder" /></div>
     </div>
-    <p class="actions" style="margin-bottom:0">
+    <p class="actions tight">
       <button type="submit" asp-page-handler="Save" class="primary">Save</button>
       <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this skill?');">Delete</button>
+              data-confirm="Delete this skill?">Delete</button>
       <span class="muted">Used by @t.Uses project(s)</span>
     </p>
   </form>
@@ -31,5 +31,5 @@
     <div><label>Key</label><input type="text" name="key" maxlength="40" placeholder="python" /></div>
     <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Technologies.Count + 1)" /></div>
   </div>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add skill</button></p>
+  <p class="tight"><button type="submit" asp-page-handler="Add" class="primary">Add skill</button></p>
 </form>

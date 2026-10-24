@@ -1,0 +1,21 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+<div class="login">
+  <h1>Sign in</h1>
+  @if (Model.Error is not null)
+  {
+    <div class="flash err" role="alert">@Model.Error</div>
+  }
+  <form method="post" class="card">
+    <label for="Username">Username</label>
+    <input id="Username" name="Username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="100" required />
+
+    <label for="Password">Password</label>
+    <input id="Password" name="Password" type="password" autocomplete="current-password" maxlength="256" required />
+
+    <p class="tight"><button type="submit" class="primary">Sign in</button></p>
+  </form>
+</div>

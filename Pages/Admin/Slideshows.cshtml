@@ -24,11 +24,11 @@
       <div><label>Heading</label><input type="text" name="heading" value="@s.Heading" maxlength="120" /></div>
       <div><label>Sort order</label><input type="number" name="sortOrder" value="@s.SortOrder" /></div>
     </div>
-    <p class="actions" style="margin-bottom:0">
+    <p class="actions tight">
       <button type="submit" asp-page-handler="Save" class="primary">Save</button>
       <a class="btn" asp-page="Slides" asp-route-slideshowId="@s.Id">Edit slides (@s.Slides)</a>
       <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this slideshow and all its slides? This cannot be undone.');">Delete</button>
+              data-confirm="Delete this slideshow and all its slides? This cannot be undone.">Delete</button>
     </p>
   </form>
 }
@@ -48,5 +48,5 @@
     <div><label>Heading</label><input type="text" name="heading" maxlength="120" placeholder="Wireframe to final product" /></div>
     <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Slideshows.Count + 1)" /></div>
   </div>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add slideshow</button></p>
+  <p class="tight"><button type="submit" asp-page-handler="Add" class="primary">Add slideshow</button></p>
 </form>
