@@ -1,9 +1,8 @@
-using System.Threading.RateLimiting;
 using GlurSolutions.Web;
-using GlurSolutions.Web.Api;
 using GlurSolutions.Web.Data;
 using GlurSolutions.Web.Security;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,26 +33,17 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "No connection string found. Set ConnectionStrings:DefaultConnection (see README).");
 }
-// EnableRetryOnFailure matters for Azure SQL: the free/serverless tier pauses when idle and the first
-// connection after a pause can fail once while it wakes up.
+// The database is only used by the signed-in admin pages (visitors read the JSON snapshots in Blob storage).
+// Two settings keep it asleep the rest of the time:
+//  - Pooling = false: every database call opens and closes its own connection, so nothing stays connected after a
+//    request finishes. An idle pooled connection counts as an open session and stops Azure SQL serverless from
+//    auto-pausing. Only one person uses the admin, so the extra connect time does not matter.
+//  - ConnectTimeout of at least 60 s: the first call after a pause waits for the database to wake up.
+// EnableRetryOnFailure also matters for Azure SQL: the first connection after a pause can fail once while it wakes.
+var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString) { Pooling = false };
+if (connectionStringBuilder.ConnectTimeout < 60) connectionStringBuilder.ConnectTimeout = 60;
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
-
-// The live site (glursolutions.com on Cloudflare) calls /api/* from the browser, so the browser needs
-// permission via CORS. Only GET, and only from the origins listed in appsettings (Cors:AllowedOrigins).
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(options => options.AddPolicy(PublicApi.CorsPolicy, policy =>
-    policy.WithOrigins(allowedOrigins).WithMethods("GET").AllowAnyHeader()));
-
-// Basic protection for the public API: 120 requests a minute per visitor IP
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy(PublicApi.RateLimitPolicy, httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
-});
+    options.UseSqlServer(connectionStringBuilder.ConnectionString, sql => sql.EnableRetryOnFailure()));
 
 // Azure App Service / Cloudflare sit in front of the app; this makes the real visitor IP and https visible
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -90,14 +80,14 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();      // serves everything in wwwroot (your CSS and JS)
 app.UseRouting();
-app.UseCors();
-app.UseRateLimiter();
 
 // /Admin: 404 unless the request came through the Cloudflare Worker (X-Origin-Secret) or, in Development, from this
 // computer; then a login is required. Also adds UseAuthentication and UseAuthorization, so they are not repeated here.
 app.UseAdminSecurity();
 app.MapRazorPages();
-app.MapPublicApi();
+
+// Does not touch the database, so uptime checks and Azure's keep-warm pings can never wake it.
+app.MapGet("/healthz", () => Results.Text("ok")).AllowAnonymous();
 
 app.MapPost("/internal/snapshot", async (HttpRequest req, SnapshotService svc, IConfiguration cfg) =>
 {
