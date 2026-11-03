@@ -2,54 +2,64 @@
 @model NotesModel
 @{
     ViewData["Title"] = "Notes";
+    ViewData["SaveLabel"] = "Save notes";
+    ViewData["CancelUrl"] = Url.Page("/Admin/Index");
+    ViewData["ProjectId"] = Model.ProjectId;
+    ViewData["ProjectTab"] = "notes";
+    ViewData["LiveSlug"] = Model.ProjectSlug;
+    var blank = new NotesModel.NoteRow { SortOrder = Model.Rows.Count + 1 };
+    var all = Model.Rows.Concat(new[] { blank }).ToList();
 }
 <p class="crumb"><a asp-page="Index">Projects</a> &rsaquo; <a asp-page="Project" asp-route-id="@Model.ProjectId">@Model.ProjectTitle</a> &rsaquo; Notes</p>
-<h1>Side-panel notes</h1>
-<p class="hint">Each note is a bold heading plus one sentence. <strong>Feedback</strong> notes appear beside the first slideshow, <strong>Improved</strong> notes ("What improved") beside the second.</p>
+<div class="head">
+  <h1>Side-panel notes</h1>
+</div>
+<partial name="_ProjectTabs" />
+<p class="lede">Each note is a bold heading plus one sentence. <strong>Feedback</strong> notes appear beside the first slideshow, <strong>Improved</strong> notes ("What improved") beside the second. Edit the rows, then press <strong>Save notes</strong> once.</p>
 
-@foreach (var n in Model.Notes)
+@if (Model.Errors.Count > 0)
 {
-  <form method="post" class="card">
-    <input type="hidden" name="id" value="@n.Id" />
-    <div class="grid">
-      <div>
-        <label>Panel</label>
-        <select name="kind">
-          @foreach (var k in Enum.GetValues<NoteKind>())
-          {
-            <option value="@k" selected="@(n.Kind == k)">@k</option>
-          }
-        </select>
-      </div>
-      <div><label>Heading</label><input type="text" name="heading" value="@n.Heading" maxlength="80" /></div>
-      <div><label>Sort order</label><input type="number" name="sortOrder" value="@n.SortOrder" /></div>
-    </div>
-    <label>Text</label>
-    <textarea name="body" rows="2" maxlength="400">@n.Body</textarea>
-    <p class="actions" style="margin-bottom:0">
-      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
-      <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this note?');">Delete</button>
-    </p>
-  </form>
+  <div class="errors" role="alert">
+    <strong>Nothing was saved.</strong>
+    <ul>@foreach (var problem in Model.Errors) { <li>@problem</li> }</ul>
+  </div>
 }
 
-<h2>Add a note</h2>
-<form method="post" class="card">
-  <div class="grid">
-    <div>
-      <label>Panel</label>
-      <select name="kind">
-        @foreach (var k in Enum.GetValues<NoteKind>())
-        {
-          <option value="@k">@k</option>
-        }
-      </select>
+<form method="post" id="editor" data-confirm="Delete the notes marked for deletion? This cannot be undone.">
+  <div id="rows">
+  @for (var i = 0; i < all.Count; i++)
+  {
+    var r = all[i];
+    <div class="row-card" data-row @(r.Id == 0 ? "data-new" : "data-existing")>
+      <input type="hidden" name="Rows.index" value="@i" />
+      <input type="hidden" name="Rows[@i].Id" value="@r.Id" />
+      <div class="row-head">
+        <span class="row-no">@(i + 1)</span>
+        <span class="row-title" data-empty="New note">@(string.IsNullOrWhiteSpace(r.Heading) ? "New note" : r.Heading)</span>
+        <span class="grow"></span>
+        <button type="button" class="btn btn--ghost btn--sm" data-remove-row hidden>Remove</button>
+        <label class="del"><input type="checkbox" class="del-box" name="Rows[@i].Delete" value="true" /> Delete</label>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Panel</label>
+          <select name="Rows[@i].Kind">
+            @foreach (var k in Enum.GetValues<NoteKind>())
+            {
+              <option value="@k" selected="@(r.Kind == k)">@k</option>
+            }
+          </select>
+        </div>
+        <div class="field"><label>Heading</label><input type="text" name="Rows[@i].Heading" value="@r.Heading" maxlength="80" placeholder="Navigation" /></div>
+        <div class="field"><label>Sort order</label><input type="number" name="Rows[@i].SortOrder" value="@r.SortOrder" /></div>
+      </div>
+      <div class="field">
+        <label>Text</label>
+        <textarea name="Rows[@i].Body" rows="2" maxlength="400">@r.Body</textarea>
+        <span class="count"></span>
+      </div>
     </div>
-    <div><label>Heading</label><input type="text" name="heading" maxlength="80" placeholder="Navigation" /></div>
-    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Notes.Count + 1)" /></div>
+  }
   </div>
-  <label>Text</label>
-  <textarea name="body" rows="2" maxlength="400"></textarea>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add note</button></p>
+  <button type="button" class="btn btn--ghost add-row" data-add="#rows">+ Add another note</button>
 </form>
