@@ -5,84 +5,116 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GlurSolutions.Web.Pages.Admin;
 
-// The skills: the pills on the home page and the tags on project cards
+// The skills: the pills on the home page and the tags on project cards. One Save button saves every row on the page.
 public class TechnologiesModel(AppDbContext db) : AdminPageModel
 {
-    public record Row(int Id, string Key, string Label, int SortOrder, int Uses);
+    public class SkillRow
+    {
+        public int Id { get; set; }              // 0 = a new skill
+        public string? Label { get; set; }
+        public string? Key { get; set; }
+        public int SortOrder { get; set; }
+        public bool Delete { get; set; }
+    }
 
-    public List<Row> Technologies { get; private set; } = [];
+    [BindProperty] public List<SkillRow> Rows { get; set; } = [];
+
+    /// <summary>How many projects use each skill (skill id to count).</summary>
+    public Dictionary<int, int> Uses { get; private set; } = new();
 
     public async Task OnGetAsync()
     {
-        Technologies = await db.Technologies
+        var items = await db.Technologies
             .AsNoTracking()
             .OrderBy(t => t.SortOrder).ThenBy(t => t.Id)
-            .Select(t => new Row(t.Id, t.Key, t.Label, t.SortOrder, t.ProjectTechnologies.Count))
+            .Select(t => new { t.Id, t.Key, t.Label, t.SortOrder, Count = t.ProjectTechnologies.Count })
             .ToListAsync();
+
+        Rows = items.Select(t => new SkillRow { Id = t.Id, Key = t.Key, Label = t.Label, SortOrder = t.SortOrder }).ToList();
+        Uses = items.ToDictionary(t => t.Id, t => t.Count);
     }
 
-    public async Task<IActionResult> OnPostAddAsync(string? key, string? label, int sortOrder)
+    public async Task<IActionResult> OnPostAsync()
     {
-        var problem = await CheckAsync(key, label, null);
-        if (problem is not null) { Fail(problem); return RedirectToPage(); }
+        var existing = await db.Technologies.Include(t => t.ProjectTechnologies).ToListAsync();
+        var byId = existing.ToDictionary(t => t.Id);
+        Uses = existing.ToDictionary(t => t.Id, t => t.ProjectTechnologies.Count);
 
-        db.Technologies.Add(new Technology { Key = key!.Trim().ToLowerInvariant(), Label = label!.Trim(), SortOrder = sortOrder });
-        await db.SaveChangesAsync();
-        await RefreshSnapshotAsync();
-        Flash($"Added \"{label!.Trim()}\".");
-        return RedirectToPage();
-    }
+        // Keys of skills that were not on the submitted page still count as taken
+        var submittedIds = Rows.Where(r => r.Id != 0).Select(r => r.Id).ToHashSet();
+        var takenKeys = new HashSet<string>(existing.Where(t => !submittedIds.Contains(t.Id)).Select(t => t.Key));
 
-    public async Task<IActionResult> OnPostSaveAsync(int id, string? key, string? label, int sortOrder)
-    {
-        var technology = await db.Technologies.FindAsync(id);
-        if (technology is null) return NotFound();
+        var toAdd = new List<(string Key, string Label, int Sort)>();
+        var toChange = new List<(Technology Skill, string Key, string Label, int Sort)>();
+        var toRemove = new List<Technology>();
 
-        var problem = await CheckAsync(key, label, id);
-        if (problem is not null) { Fail(problem); return RedirectToPage(); }
-
-        technology.Key = key!.Trim().ToLowerInvariant();
-        technology.Label = label!.Trim();
-        technology.SortOrder = sortOrder;
-        await db.SaveChangesAsync();
-        await RefreshSnapshotAsync();
-        Flash($"Saved \"{technology.Label}\".");
-        return RedirectToPage();
-    }
-
-    public async Task<IActionResult> OnPostDeleteAsync(int id)
-    {
-        var technology = await db.Technologies.FindAsync(id);
-        if (technology is null) return NotFound();
-
-        // The database refuses to delete a skill that projects still use, so say so nicely instead of failing
-        if (await db.ProjectTechnologies.AnyAsync(pt => pt.TechnologyId == id))
+        var position = 0;
+        foreach (var row in Rows)
         {
-            Fail($"\"{technology.Label}\" is still used by at least one project. Untick it on those projects first.");
+            position++;
+            Technology? current = null;
+            if (row.Id != 0 && !byId.TryGetValue(row.Id, out current)) continue;   // already gone
+
+            if (row.Delete)
+            {
+                if (current is null) continue;
+                // The database refuses to delete a skill that projects still use, so say so nicely
+                if (current.ProjectTechnologies.Count > 0)
+                    Errors.Add($"\"{current.Label}\" is still used by {current.ProjectTechnologies.Count} project(s). Untick it on those projects before deleting it.");
+                else
+                    toRemove.Add(current);
+                continue;
+            }
+
+            var key = row.Key?.Trim().ToLowerInvariant();
+            var label = row.Label?.Trim();
+            if (current is null && string.IsNullOrEmpty(key) && string.IsNullOrEmpty(label)) continue;   // an empty "new" row
+
+            var name = string.IsNullOrEmpty(label) ? $"Skill {position}" : $"\"{label}\"";
+            if (string.IsNullOrEmpty(label) || label.Length > 60)
+            {
+                Errors.Add($"Skill {position}: enter a label of up to 60 characters.");
+                continue;
+            }
+            if (string.IsNullOrEmpty(key) || key.Length > 40 || !AdminValidation.Slug.IsMatch(key))
+            {
+                Errors.Add($"{name}: the key must be lower-case letters, numbers and single hyphens (max 40), e.g. html-css-js.");
+                continue;
+            }
+            if (!takenKeys.Add(key))
+            {
+                Errors.Add($"{name}: another skill already uses the key \"{key}\".");
+                continue;
+            }
+
+            if (current is null) toAdd.Add((key, label, row.SortOrder));
+            else toChange.Add((current, key, label, row.SortOrder));
+        }
+
+        if (Errors.Count > 0) return Page();   // nothing saved; the form keeps what was typed
+
+        var updated = 0;
+        foreach (var (skill, newKey, newLabel, newSort) in toChange)
+        {
+            if (skill.Key == newKey && skill.Label == newLabel && skill.SortOrder == newSort) continue;
+            skill.Key = newKey;
+            skill.Label = newLabel;
+            skill.SortOrder = newSort;
+            updated++;
+        }
+        foreach (var (addKey, addLabel, addSort) in toAdd)
+            db.Technologies.Add(new Technology { Key = addKey, Label = addLabel, SortOrder = addSort });
+        db.Technologies.RemoveRange(toRemove);
+
+        if (updated + toAdd.Count + toRemove.Count == 0)
+        {
+            Flash("No changes to save.");
             return RedirectToPage();
         }
 
-        db.Technologies.Remove(technology);
         await db.SaveChangesAsync();
         await RefreshSnapshotAsync();
-        Flash($"Deleted \"{technology.Label}\".");
+        Flash(Summarise("skills", updated, toAdd.Count, toRemove.Count));
         return RedirectToPage();
-    }
-
-    // Returns a message when the values are not acceptable, otherwise null
-    private async Task<string?> CheckAsync(string? key, string? label, int? ownId)
-    {
-        key = key?.Trim().ToLowerInvariant();
-        label = label?.Trim();
-
-        if (string.IsNullOrEmpty(key) || key.Length > 40 || !AdminValidation.Slug.IsMatch(key))
-            return "The key must be lower-case letters, numbers and single hyphens (max 40), e.g. html-css-js.";
-        if (string.IsNullOrEmpty(label) || label.Length > 60)
-            return "Enter a label of up to 60 characters.";
-
-        var ownIdValue = ownId ?? 0;
-        if (await db.Technologies.AnyAsync(t => t.Key == key && t.Id != ownIdValue))
-            return $"Another skill already uses the key \"{key}\".";
-        return null;
     }
 }

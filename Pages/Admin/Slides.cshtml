@@ -2,6 +2,13 @@
 @model SlidesModel
 @{
     ViewData["Title"] = "Slides";
+    ViewData["SaveLabel"] = "Save slides";
+    ViewData["CancelUrl"] = Url.Page("/Admin/Slideshows", new { projectId = Model.ProjectId });
+    ViewData["ProjectId"] = Model.ProjectId;
+    ViewData["ProjectTab"] = "slideshows";
+    ViewData["LiveSlug"] = Model.ProjectSlug;
+    var blank = new SlidesModel.SlideRow { SortOrder = Model.Rows.Count + 1 };
+    var all = Model.Rows.Concat(new[] { blank }).ToList();
 }
 <p class="crumb">
   <a asp-page="Index">Projects</a> &rsaquo;
@@ -9,46 +16,67 @@
   <a asp-page="Slideshows" asp-route-projectId="@Model.ProjectId">Slideshows</a> &rsaquo;
   @Model.SlideshowHeading
 </p>
-<h1>@Model.SlideshowHeading</h1>
-<p class="hint">Slides play in sort order. The <strong>stage label</strong> is the text on the button under the picture. The picture must be hosted online (a full https:// address); leave it empty to show a grey placeholder.</p>
+<div class="head">
+  <h1>@Model.SlideshowHeading</h1>
+</div>
+<partial name="_ProjectTabs" />
+<p class="lede">Slides play in sort order. The <strong>stage label</strong> is the text on the button under the picture. The picture must be hosted online (a full https:// address); leave it empty to show a grey placeholder. Edit as many slides as you like, then press <strong>Save slides</strong> once.</p>
 
-@foreach (var s in Model.Slides)
+@if (Model.Errors.Count > 0)
 {
-  <form method="post" class="card">
-    <input type="hidden" name="id" value="@s.Id" />
-    <div class="grid">
-      <div><label>Stage label (button)</label><input type="text" name="stageLabel" value="@s.StageLabel" maxlength="60" /></div>
-      <div><label>Title</label><input type="text" name="title" value="@s.Title" maxlength="120" /></div>
-      <div><label>Sort order</label><input type="number" name="sortOrder" value="@s.SortOrder" /></div>
-    </div>
-    <label>Caption</label>
-    <textarea name="caption" rows="2" maxlength="600">@s.Caption</textarea>
-    <div class="grid">
-      <div><label>Picture address</label><input type="text" name="imagePath" value="@s.ImagePath" maxlength="260" placeholder="https://..." /></div>
-      <div><label>Picture description (for screen readers)</label><input type="text" name="imageAlt" value="@s.ImageAlt" maxlength="200" /></div>
-    </div>
-    <p class="actions" style="margin-bottom:0">
-      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
-      <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this slide?');">Delete</button>
-    </p>
-  </form>
+  <div class="errors" role="alert">
+    <strong>Nothing was saved.</strong>
+    <ul>@foreach (var problem in Model.Errors) { <li>@problem</li> }</ul>
+  </div>
 }
 
-<h2>Add a slide</h2>
-<form method="post" class="card">
-  <div class="grid">
-    <div><label>Stage label (button)</label><input type="text" name="stageLabel" maxlength="60" placeholder="Wireframe" /></div>
-    <div><label>Title</label><input type="text" name="title" maxlength="120" /></div>
-    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Slides.Count + 1)" /></div>
+<form method="post" id="editor" data-confirm="Delete the slides marked for deletion? This cannot be undone.">
+  <div id="rows">
+  @for (var i = 0; i < all.Count; i++)
+  {
+    var r = all[i];
+    var hasPicture = !string.IsNullOrWhiteSpace(r.ImagePath) && r.ImagePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+    <div class="row-card" data-row @(r.Id == 0 ? "data-new" : "data-existing")>
+      <input type="hidden" name="Rows.index" value="@i" />
+      <input type="hidden" name="Rows[@i].Id" value="@r.Id" />
+      <div class="row-head">
+        <span class="row-no">@(i + 1)</span>
+        <span class="row-title" data-empty="New slide">@(string.IsNullOrWhiteSpace(r.StageLabel) ? "New slide" : r.StageLabel)</span>
+        <span class="grow"></span>
+        <button type="button" class="btn btn--ghost btn--sm" data-remove-row hidden>Remove</button>
+        <label class="del"><input type="checkbox" class="del-box" name="Rows[@i].Delete" value="true" /> Delete</label>
+      </div>
+      <div class="slide-body">
+        <div class="thumb-box">
+          <span>No picture</span>
+          @if (hasPicture)
+          {
+            <img class="thumb" src="@r.ImagePath" alt="" referrerpolicy="no-referrer" loading="lazy" />
+          }
+          else
+          {
+            <img class="thumb" alt="" referrerpolicy="no-referrer" hidden />
+          }
+        </div>
+        <div>
+          <div class="grid">
+            <div class="field"><label>Stage label (button)</label><input type="text" name="Rows[@i].StageLabel" value="@r.StageLabel" maxlength="60" placeholder="Wireframe" /></div>
+            <div class="field"><label>Title</label><input type="text" name="Rows[@i].Title" value="@r.Title" maxlength="120" /></div>
+            <div class="field"><label>Sort order</label><input type="number" name="Rows[@i].SortOrder" value="@r.SortOrder" /></div>
+          </div>
+          <div class="field">
+            <label>Caption</label>
+            <textarea name="Rows[@i].Caption" rows="2" maxlength="600">@r.Caption</textarea>
+            <span class="count"></span>
+          </div>
+          <div class="grid">
+            <div class="field"><label>Picture address</label><input type="text" class="img-input" name="Rows[@i].ImagePath" value="@r.ImagePath" maxlength="260" placeholder="https://..." /></div>
+            <div class="field"><label>Picture description (for screen readers)</label><input type="text" name="Rows[@i].ImageAlt" value="@r.ImageAlt" maxlength="200" /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
   </div>
-  <label>Caption</label>
-  <textarea name="caption" rows="2" maxlength="600"></textarea>
-  <div class="grid">
-    <div><label>Picture address</label><input type="text" name="imagePath" maxlength="260" placeholder="https://..." /></div>
-    <div><label>Picture description (for screen readers)</label><input type="text" name="imageAlt" maxlength="200" /></div>
-  </div>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add slide</button></p>
+  <button type="button" class="btn btn--ghost add-row" data-add="#rows">+ Add another slide</button>
 </form>
-
-<p><a class="btn" asp-page="Slideshows" asp-route-projectId="@Model.ProjectId">Back to slideshows</a></p>

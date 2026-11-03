@@ -2,51 +2,65 @@
 @model SlideshowsModel
 @{
     ViewData["Title"] = "Slideshows";
+    ViewData["SaveLabel"] = "Save slideshows";
+    ViewData["CancelUrl"] = Url.Page("/Admin/Index");
+    ViewData["ProjectId"] = Model.ProjectId;
+    ViewData["ProjectTab"] = "slideshows";
+    ViewData["LiveSlug"] = Model.ProjectSlug;
+    var blank = new SlideshowsModel.SlideshowRow { SortOrder = Model.Rows.Count + 1 };
+    var all = Model.Rows.Concat(new[] { blank }).ToList();
 }
 <p class="crumb"><a asp-page="Index">Projects</a> &rsaquo; <a asp-page="Project" asp-route-id="@Model.ProjectId">@Model.ProjectTitle</a> &rsaquo; Slideshows</p>
-<h1>Slideshows</h1>
-<p class="hint">A project page shows one <strong>Process</strong> slideshow (wireframe to final product) and one <strong>Improvement</strong> slideshow (changes over time). If a project has several of the same kind, the website shows the first one with slides.</p>
+<div class="head">
+  <h1>Slideshows</h1>
+</div>
+<partial name="_ProjectTabs" />
+<p class="lede">A project page shows one <strong>Process</strong> slideshow (wireframe to final product) and one <strong>Improvement</strong> slideshow (changes over time). If a project has several of the same kind, the website shows the first one that has slides. Edit the rows, then press <strong>Save slideshows</strong> once. Slides are edited on their own page, so save here first.</p>
 
-@foreach (var s in Model.Slideshows)
+@if (Model.Errors.Count > 0)
 {
-  <form method="post" class="card">
-    <input type="hidden" name="id" value="@s.Id" />
-    <div class="grid">
-      <div>
-        <label>Kind</label>
-        <select name="kind">
-          @foreach (var k in Enum.GetValues<SlideshowKind>())
-          {
-            <option value="@k" selected="@(s.Kind == k)">@k</option>
-          }
-        </select>
-      </div>
-      <div><label>Heading</label><input type="text" name="heading" value="@s.Heading" maxlength="120" /></div>
-      <div><label>Sort order</label><input type="number" name="sortOrder" value="@s.SortOrder" /></div>
-    </div>
-    <p class="actions" style="margin-bottom:0">
-      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
-      <a class="btn" asp-page="Slides" asp-route-slideshowId="@s.Id">Edit slides (@s.Slides)</a>
-      <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this slideshow and all its slides? This cannot be undone.');">Delete</button>
-    </p>
-  </form>
+  <div class="errors" role="alert">
+    <strong>Nothing was saved.</strong>
+    <ul>@foreach (var problem in Model.Errors) { <li>@problem</li> }</ul>
+  </div>
 }
 
-<h2>Add a slideshow</h2>
-<form method="post" class="card">
-  <div class="grid">
-    <div>
-      <label>Kind</label>
-      <select name="kind">
-        @foreach (var k in Enum.GetValues<SlideshowKind>())
+<form method="post" id="editor" data-confirm="Delete the slideshows marked for deletion, with all their slides? This cannot be undone.">
+  <div id="rows">
+  @for (var i = 0; i < all.Count; i++)
+  {
+    var r = all[i];
+    <div class="row-card" data-row @(r.Id == 0 ? "data-new" : "data-existing")>
+      <input type="hidden" name="Rows.index" value="@i" />
+      <input type="hidden" name="Rows[@i].Id" value="@r.Id" />
+      <div class="row-head">
+        <span class="row-no">@(i + 1)</span>
+        <span class="row-title" data-empty="New slideshow">@(string.IsNullOrWhiteSpace(r.Heading) ? "New slideshow" : r.Heading)</span>
+        <span class="grow"></span>
+        @if (r.Id != 0)
         {
-          <option value="@k">@k</option>
+          <a class="btn btn--ghost btn--sm" asp-page="Slides" asp-route-slideshowId="@r.Id">
+            Edit slides (@(Model.SlideCounts.TryGetValue(r.Id, out var slideCount) ? slideCount : 0))
+          </a>
         }
-      </select>
+        <button type="button" class="btn btn--ghost btn--sm" data-remove-row hidden>Remove</button>
+        <label class="del"><input type="checkbox" class="del-box" name="Rows[@i].Delete" value="true" /> Delete</label>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>Kind</label>
+          <select name="Rows[@i].Kind">
+            @foreach (var k in Enum.GetValues<SlideshowKind>())
+            {
+              <option value="@k" selected="@(r.Kind == k)">@k</option>
+            }
+          </select>
+        </div>
+        <div class="field"><label>Heading</label><input type="text" name="Rows[@i].Heading" value="@r.Heading" maxlength="120" placeholder="Wireframe to final product" /></div>
+        <div class="field"><label>Sort order</label><input type="number" name="Rows[@i].SortOrder" value="@r.SortOrder" /></div>
+      </div>
     </div>
-    <div><label>Heading</label><input type="text" name="heading" maxlength="120" placeholder="Wireframe to final product" /></div>
-    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Slideshows.Count + 1)" /></div>
+  }
   </div>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add slideshow</button></p>
+  <button type="button" class="btn btn--ghost add-row" data-add="#rows">+ Add another slideshow</button>
 </form>

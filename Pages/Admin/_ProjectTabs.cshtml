@@ -1,0 +1,17 @@
+@* Tabs shared by the project, slideshows, slides and notes pages. The page sets ViewData["ProjectId"] and ViewData["ProjectTab"]. *@
+@{
+    var tab = ViewData["ProjectTab"] as string ?? "";
+}
+@if (ViewData["ProjectId"] is int projectId)
+{
+  <nav class="tabs" aria-label="Project sections">
+    <a asp-page="/Admin/Project" asp-route-id="@projectId" class="@(tab == "details" ? "active" : "")">Details</a>
+    <a asp-page="/Admin/Slideshows" asp-route-projectId="@projectId" class="@(tab == "slideshows" ? "active" : "")">Slideshows &amp; slides</a>
+    <a asp-page="/Admin/Notes" asp-route-projectId="@projectId" class="@(tab == "notes" ? "active" : "")">Side-panel notes</a>
+    @if (ViewData["LiveSlug"] is string liveSlug)
+    {
+      <a class="tab-end" target="_blank" rel="noopener noreferrer"
+         href="https://glursolutions.com/projects.html?project=@Uri.EscapeDataString(liveSlug)">View on live site &#8599;</a>
+    }
+  </nav>
+}
