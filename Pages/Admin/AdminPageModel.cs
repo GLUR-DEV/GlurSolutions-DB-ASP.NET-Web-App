@@ -7,11 +7,25 @@ namespace GlurSolutions.Web.Pages.Admin;
 /// <summary>Base class for the admin pages: one-time messages shown at the top of the next page.</summary>
 public abstract class AdminPageModel : PageModel
 {
+    /// <summary>Problems found when a whole page was saved. When this is not empty nothing was saved,
+    /// and the page shows the list above the form with everything the admin typed still in place.</summary>
+    public List<string> Errors { get; } = [];
+
     /// <summary>A green "saved" message, shown once after a redirect.</summary>
     protected void Flash(string message) => TempData["Message"] = message;
 
     /// <summary>A red error message, shown once after a redirect.</summary>
     protected void Fail(string message) => TempData["Error"] = message;
+
+    /// <summary>"2 updated, 1 added, 1 deleted" for the message after a one-button save.</summary>
+    protected static string Summarise(string what, int updated, int added, int deleted)
+    {
+        var parts = new List<string>();
+        if (updated > 0) parts.Add($"{updated} updated");
+        if (added > 0) parts.Add($"{added} added");
+        if (deleted > 0) parts.Add($"{deleted} deleted");
+        return $"Saved {what}: {string.Join(", ", parts)}.";
+    }
 
     /// <summary>Rewrites the saved copy of the public site (Azure Storage) so it matches the database.
     /// Call right after SaveChangesAsync. A failure never loses the edit; it just shows a warning.</summary>

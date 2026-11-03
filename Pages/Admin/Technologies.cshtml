@@ -2,34 +2,49 @@
 @model TechnologiesModel
 @{
     ViewData["Title"] = "Skills";
+    ViewData["SaveLabel"] = "Save skills";
+    var blank = new TechnologiesModel.SkillRow { SortOrder = Model.Rows.Count + 1 };
+    var all = Model.Rows.Concat(new[] { blank }).ToList();
 }
-<h1>Skills</h1>
-<p class="hint">These are the filter pills on the home page and the tags on project cards. The <strong>key</strong> is an internal name (lower-case, no spaces); the <strong>label</strong> is what visitors see.</p>
+<div class="head">
+  <h1>Skills</h1>
+</div>
+<p class="lede">These are the filter pills on the home page and the tags on project cards. The <strong>label</strong> is what visitors see; the <strong>key</strong> is an internal name (lower-case, no spaces). Edit as many rows as you like, then press <strong>Save skills</strong> once.</p>
 
-@foreach (var t in Model.Technologies)
+@if (Model.Errors.Count > 0)
 {
-  <form method="post" class="card">
-    <input type="hidden" name="id" value="@t.Id" />
-    <div class="grid">
-      <div><label>Label</label><input type="text" name="label" value="@t.Label" maxlength="60" /></div>
-      <div><label>Key</label><input type="text" name="key" value="@t.Key" maxlength="40" /></div>
-      <div><label>Sort order</label><input type="number" name="sortOrder" value="@t.SortOrder" /></div>
-    </div>
-    <p class="actions" style="margin-bottom:0">
-      <button type="submit" asp-page-handler="Save" class="primary">Save</button>
-      <button type="submit" asp-page-handler="Delete" class="danger"
-              onclick="return confirm('Delete this skill?');">Delete</button>
-      <span class="muted">Used by @t.Uses project(s)</span>
-    </p>
-  </form>
+  <div class="errors" role="alert">
+    <strong>Nothing was saved.</strong>
+    <ul>@foreach (var problem in Model.Errors) { <li>@problem</li> }</ul>
+  </div>
 }
 
-<h2>Add a skill</h2>
-<form method="post" class="card">
-  <div class="grid">
-    <div><label>Label</label><input type="text" name="label" maxlength="60" placeholder="Python" /></div>
-    <div><label>Key</label><input type="text" name="key" maxlength="40" placeholder="python" /></div>
-    <div><label>Sort order</label><input type="number" name="sortOrder" value="@(Model.Technologies.Count + 1)" /></div>
+<form method="post" id="editor" data-confirm="Delete the skills marked for deletion? This cannot be undone.">
+  <div id="rows">
+  @for (var i = 0; i < all.Count; i++)
+  {
+    var r = all[i];
+    <div class="row-card" data-row @(r.Id == 0 ? "data-new" : "data-existing")>
+      <input type="hidden" name="Rows.index" value="@i" />
+      <input type="hidden" name="Rows[@i].Id" value="@r.Id" />
+      <div class="row-head">
+        <span class="row-no">@(i + 1)</span>
+        <span class="row-title" data-empty="New skill">@(string.IsNullOrWhiteSpace(r.Label) ? "New skill" : r.Label)</span>
+        @if (r.Id != 0 && Model.Uses.TryGetValue(r.Id, out var uses))
+        {
+          <span class="muted">Used by @uses project(s)</span>
+        }
+        <span class="grow"></span>
+        <button type="button" class="btn btn--ghost btn--sm" data-remove-row hidden>Remove</button>
+        <label class="del"><input type="checkbox" class="del-box" name="Rows[@i].Delete" value="true" /> Delete</label>
+      </div>
+      <div class="grid">
+        <div class="field"><label>Label</label><input type="text" name="Rows[@i].Label" value="@r.Label" maxlength="60" placeholder="Python" /></div>
+        <div class="field"><label>Key</label><input type="text" name="Rows[@i].Key" value="@r.Key" maxlength="40" placeholder="python" /></div>
+        <div class="field"><label>Sort order</label><input type="number" name="Rows[@i].SortOrder" value="@r.SortOrder" /></div>
+      </div>
+    </div>
+  }
   </div>
-  <p style="margin-bottom:0"><button type="submit" asp-page-handler="Add" class="primary">Add skill</button></p>
+  <button type="button" class="btn btn--ghost add-row" data-add="#rows">+ Add another skill</button>
 </form>

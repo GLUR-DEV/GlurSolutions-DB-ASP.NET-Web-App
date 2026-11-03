@@ -131,7 +131,7 @@ public class ProjectModel(AppDbContext db) : AdminPageModel
         await db.SaveChangesAsync();
         await RefreshSnapshotAsync();
         Flash(id is null
-            ? $"Created \"{project.Title}\" as a draft. Add slideshows and notes below, then publish it."
+            ? $"Created \"{project.Title}\" as a draft. Add slideshows and notes from the tabs above, then publish it."
             : $"Saved \"{project.Title}\".");
         return RedirectToPage("Project", new { id = project.Id });
     }
