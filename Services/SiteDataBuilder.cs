@@ -30,7 +30,7 @@ public class SiteDataBuilder(AppDbContext db)
             .Select(p => new ProjectDetailDto(
                 p.Slug, p.Title, p.ShortDescription, p.Summary,
                 p.CoverImagePath, p.CoverAlt,
-                p.Role, p.Tools, p.Timeframe, p.UpdatedUtc,
+                p.Role, p.Tools, p.Timeframe, p.LiveSiteUrl, p.DesignNotesUrl, p.UpdatedUtc,
                 p.ProjectTechnologies
                     .OrderBy(pt => pt.Technology.SortOrder)
                     .Select(pt => new TechnologyDto(pt.Technology.Key, pt.Technology.Label))

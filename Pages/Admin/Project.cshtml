@@ -44,6 +44,23 @@ else
       </div>
     </div>
 
+    <div class="card">
+      <h2>Buttons</h2>
+      <p class="sub">The two buttons under the project description. Leave a box empty to hide that button.</p>
+      <div class="grid">
+        <div class="field">
+          <label asp-for="Input.LiveSiteUrl">Go to live site: address</label>
+          <input asp-for="Input.LiveSiteUrl" type="url" maxlength="500" placeholder="https://..." />
+          <span asp-validation-for="Input.LiveSiteUrl"></span>
+        </div>
+        <div class="field">
+          <label asp-for="Input.DesignNotesUrl">See the design notes: address</label>
+          <input asp-for="Input.DesignNotesUrl" type="url" maxlength="500" placeholder="https://..." />
+          <span asp-validation-for="Input.DesignNotesUrl"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="field">
       <label asp-for="Input.ShortDescription">Short description (the text on the card)</label>
       <input asp-for="Input.ShortDescription" type="text" maxlength="300" />

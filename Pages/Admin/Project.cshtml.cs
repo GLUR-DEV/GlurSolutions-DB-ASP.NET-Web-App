@@ -27,6 +27,8 @@ public class ProjectModel(AppDbContext db) : AdminPageModel
         [StringLength(120)] public string? Role { get; set; }
         [StringLength(200)] public string? Tools { get; set; }
         [StringLength(80)] public string? Timeframe { get; set; }
+        [StringLength(500)] public string? LiveSiteUrl { get; set; }
+        [StringLength(500)] public string? DesignNotesUrl { get; set; }
 
         public int SortOrder { get; set; }
         public bool IsPublished { get; set; }
@@ -65,6 +67,7 @@ public class ProjectModel(AppDbContext db) : AdminPageModel
             Slug = project.Slug, Title = project.Title, ShortDescription = project.ShortDescription,
             Summary = project.Summary, CoverImagePath = project.CoverImagePath, CoverAlt = project.CoverAlt,
             Role = project.Role, Tools = project.Tools, Timeframe = project.Timeframe,
+            LiveSiteUrl = project.LiveSiteUrl, DesignNotesUrl = project.DesignNotesUrl,
             SortOrder = project.SortOrder, IsPublished = project.IsPublished
         };
         SelectedTechnologyIds = project.ProjectTechnologies.Select(pt => pt.TechnologyId).ToList();
@@ -79,7 +82,10 @@ public class ProjectModel(AppDbContext db) : AdminPageModel
 
         if (!AdminValidation.ImagePathOk(Input.CoverImagePath))
             ModelState.AddModelError("Input.CoverImagePath", AdminValidation.ImagePathMessage);
-
+        if (!AdminValidation.LinkOk(Input.LiveSiteUrl))
+            ModelState.AddModelError("Input.LiveSiteUrl", AdminValidation.LinkMessage);
+        if (!AdminValidation.LinkOk(Input.DesignNotesUrl))
+            ModelState.AddModelError("Input.DesignNotesUrl", AdminValidation.LinkMessage);
         var ownId = id ?? 0;
         if (await db.Projects.AnyAsync(p => p.Slug == Input.Slug && p.Id != ownId))
             ModelState.AddModelError("Input.Slug", "Another project already uses that slug.");
@@ -114,6 +120,8 @@ public class ProjectModel(AppDbContext db) : AdminPageModel
         project.Role = AdminValidation.Clean(Input.Role);
         project.Tools = AdminValidation.Clean(Input.Tools);
         project.Timeframe = AdminValidation.Clean(Input.Timeframe);
+        project.LiveSiteUrl = AdminValidation.Clean(Input.LiveSiteUrl);
+        project.DesignNotesUrl = AdminValidation.Clean(Input.DesignNotesUrl);
         project.SortOrder = Input.SortOrder;
         project.IsPublished = Input.IsPublished;
 

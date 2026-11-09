@@ -19,7 +19,7 @@ public record NoteDto(string Kind, string Heading, string Body);
 public record ProjectDetailDto(
     string Slug, string Title, string ShortDescription, string? Summary,
     string? CoverImagePath, string? CoverAlt,
-    string? Role, string? Tools, string? Timeframe, DateTime UpdatedUtc,
+    string? Role, string? Tools, string? Timeframe, string? LiveSiteUrl, string? DesignNotesUrl, DateTime UpdatedUtc,
     IReadOnlyList<TechnologyDto> Technologies,
     IReadOnlyList<SlideshowDto> Slideshows,
     IReadOnlyList<NoteDto> Notes);

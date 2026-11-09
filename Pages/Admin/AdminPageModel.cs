@@ -52,6 +52,12 @@ public static class AdminValidation
         return RelativePath.IsMatch(path) && !path.Contains("..");
     }
 
+    /// <summary>Empty is fine (the button is hidden). Otherwise a full https:// address.</summary>
+    public static bool LinkOk(string? url) =>
+        string.IsNullOrWhiteSpace(url) || HttpsUrl.IsMatch(url.Trim());
+
+    public const string LinkMessage = "Use a full https:// address, or leave it empty to hide the button.";
+
     public const string ImagePathMessage =
         "Use a full https:// address (for example from Azure Blob Storage), or leave it empty for the placeholder.";
 

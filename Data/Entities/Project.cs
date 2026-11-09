@@ -25,6 +25,12 @@ public class Project
     public string? Tools { get; set; }
     public string? Timeframe { get; set; }
 
+    /// <summary>Where the "Go to live site" button leads. Empty hides the button.</summary>
+    public string? LiveSiteUrl { get; set; }
+
+    /// <summary>Where the "See the design notes" button leads. Empty hides the button.</summary>
+    public string? DesignNotesUrl { get; set; }
+
     /// <summary>Lower numbers appear first.</summary>
     public int SortOrder { get; set; }
 
